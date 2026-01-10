@@ -37,7 +37,12 @@ class Base_class(Base):
     is_completed=Column(Boolean)
     user_id=Column(ForeignKey('users.id'))
 
-
+def get_db():
+    db = Session()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 
