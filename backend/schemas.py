@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr , UUID
+from pydantic import BaseModel
 from sqlalchemy import Boolean
 
 
