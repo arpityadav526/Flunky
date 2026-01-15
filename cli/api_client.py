@@ -3,7 +3,7 @@ from http.client import HTTPException
 import httpx
 from typing import Optional, Dict, Any
 from rich.console import Console
-from streamlit import status
+
 
 console = Console()
 
