@@ -1,0 +1,36 @@
+## **Create `.dockerignore` file:**
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Database
+*.db
+*.sqlite3
+
+# Config
+.flunky/
+cli/
+
+# OS
+.DS_Store
