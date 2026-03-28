@@ -11,39 +11,64 @@ console = Console()
 BASE_URL = "http://127.0.0.1:8000"
 
 
-def register_func(username:str, e_mail:str, password: str)-> Dict[str, any]:
-    data={
-        "username":username,
-        "e-mail":e_mail,
-        "password":password
-
+def register_user(username: str, email: str, password: str):
+    payload = {
+        "username": username,
+        "email": email,
+        "password": password,
     }
 
-    response=httpx.post(f"{BASE_URL}/register", json=data)
-    if response.status_code==201:
-        return response.json()
-    else:
-        error_detail=response.json().get("detail: unknown")
-        raise HTTPException(f"registration failed : {error_detail}")
+    try:
+        response = httpx.post(f"{BASE_URL}/register", json=payload, timeout=10.0)
+
+        if response.status_code in (200, 201):
+            return response.json()
+
+        try:
+            error_detail = response.json().get("detail")
+        except Exception:
+            error_detail = response.text
+
+        raise Exception(f"registration failed: {error_detail}")
+
+    except httpx.RequestError as e:
+        raise Exception(f"could not connect to server: {e}")
 
 
-
-def login_user(username: str, password: str)->str:
-    data={
-        "username":username,
-        "password": password
+def login_user(username: str, password: str):
+    payload = {
+        "username": username,
+        "password": password,
     }
-    response=httpx.post(f"{BASE_URL}/login", json=data)
 
-    if response.status_code == 200:
-        token_data = response.json()
-        return token_data["access_token"]  # Return just the token string
-    else:
-        error_detail = response.json().get("detail", "Login failed")
-        raise Exception(error_detail)
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    try:
+        response = httpx.post(
+            f"{BASE_URL}/login",
+            data=payload,
+            headers=headers,
+            timeout=10.0,
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        try:
+            error_detail = response.json().get("detail")
+        except Exception:
+            error_detail = response.text
+
+        raise Exception(f"login failed: {error_detail}")
+
+    except httpx.RequestError as e:
+        raise Exception(f"could not connect to server: {e}")
 
 
-
+def get_auth_headers(token: str):
+    return {"Authorization": f"Bearer {token}"}
 
 def task_func(description: str, title: str ,token: str)->Dict[str, any]:
     data={

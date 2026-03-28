@@ -4,9 +4,9 @@ from rich.prompt import Prompt
 from typing import Optional
 from rich.panel import Panel
 
-from cli.api_client import register_func
+
 from cli.config import save_token, load_token
-from cli.api_client import login_user
+from cli.api_client import login_user, register_user
 from cli.config import delete_token, is_locked_in_lmao
 from rich.table import Table
 from rich.prompt import Confirm
@@ -32,15 +32,18 @@ app.add_typer(task_app,name="task")
 ## REGISTER COMMAND ##
 @app.command()
 def register():
-    console.print(Panel.fit("📝 User Registration", style="bold blue"))
-    username=Prompt.ask("Username")
-    e_mail=Prompt.ask("E-mail")
-    password=Prompt.ask("Password", password=True)
+    console.print(Panel.fit("📝 User Registration"))
+
+    username = Prompt.ask("Username")
+    email = Prompt.ask("E-mail")
+    password = Prompt.ask("Password", password=True)
+
     try:
-        user_data=register_func(username=username, e_mail=e_mail ,password=password)
-        console.print(f"✅ Registered successfully! Welcome, {user_data['username']}!", style="green")
+        user = register_user(username, email, password)
+        console.print(f"✅ Registration successful. Welcome, {user['username']}!")
+
     except Exception as e:
-        console.print(f"❌ Registration failed: {str(e)}", style="red")
+        console.print(f"❌ Registration failed: {e}")
 
 
 
@@ -48,24 +51,19 @@ def register():
 ## LOGIN COMMAND ##
 @app.command()
 def login():
-    console.print(Panel.fit("🔐 User Login", style="bold green"))
+    console.print(Panel.fit("🔐 User Login"))
 
-    username=Prompt.ask("Username")
-    password=Prompt.ask("Password", password=True)
-
+    username = Prompt.ask("Username")
+    password = Prompt.ask("Password", password=True)
 
     try:
-    # Call the API and get token
-        token = login_user(username, password)
-
-    # Save token to config file
+        result = login_user(username, password)
+        token = result["access_token"]
         save_token(token)
-
-        console.print("✅ Logged in successfully!", style="green")
+        console.print("✅ Login successful. Token saved.")
 
     except Exception as e:
-        console.print(f"❌ Login failed: {str(e)}", style="red")
-
+        console.print(f"❌ Login failed: {e}")
 
 
 ## LOGOUT COMMAND ##

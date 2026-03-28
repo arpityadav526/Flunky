@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.status import HTTP_201_CREATED
-from tensorflow.python.distribute.multi_worker_util import task_count
+
 
 # Your modules
 from backend.database import engine, get_db
