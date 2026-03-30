@@ -8,13 +8,14 @@ CONFIG_FILE=CONFIG_DIR / "config.json"
 
 
 def save_token(token: str)->None:
+    token=token.strip()
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     data={
         "access_token": token
     }
 
     with open(CONFIG_FILE, "w") as f:
-        json.dump(data, f, ident=2)
+        json.dump(data, f, indent=2)
 
 
 def load_token()->Optional[str]:

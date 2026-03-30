@@ -8,7 +8,7 @@ from rich.console import Console
 console = Console()
 
 # Base URL of the  FastAPI backend
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://localhost:8000"
 
 
 def register_user(username: str, email: str, password: str):
@@ -68,15 +68,16 @@ def login_user(username: str, password: str):
 
 
 def get_auth_headers(token: str):
-    return {"Authorization": f"Bearer {token}"}
+   
+    return {"Authorization": f"Bearer {token.strip()}"}
 
 def task_func(description: str, title: str ,token: str)->Dict[str, any]:
     data={
-        "Description": description,
-        "Title":title
+        "task_title": title,
+        "task_description": description,
     }
     header={
-        "authorization": f" Bearer {token}"
+        "Authorization": f"Bearer {token.strip()}"
     }
     response=httpx.post(f"{BASE_URL}/tasks", json=data, headers=header)
 
@@ -92,7 +93,7 @@ def task_func(description: str, title: str ,token: str)->Dict[str, any]:
 
 def get_all_task(token: str, completed: Optional[bool] = None)-> list:
     header={
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token.strip()}"
     }
     params={}
     if completed is not None:
@@ -111,7 +112,7 @@ def get_all_task(token: str, completed: Optional[bool] = None)-> list:
 
 def get_task_by_id(task_id: int, token: str)->Dict[str, any]:
     headers={
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token.strip()}"
     }
 
 
@@ -132,7 +133,7 @@ def update_task(task_id:int , token: str, title: Optional[str] = None,
 ) -> Dict[str, Any]:
 
     headers={
-        "Authorization": f"bearer {token}"
+        "Authorization": f"Bearer {token.strip()}"
     }
 
     data = {}
@@ -158,7 +159,7 @@ def update_task(task_id:int , token: str, title: Optional[str] = None,
 
 def delete_task(task_id: int, token : str)->None:
     headers = {
-        "Authorization": f"bearer {token}"
+        "Authorization": f"Bearer {token}"
     }
     response=httpx.delete(f"{BASE_URL}/tasks/{task_id}", headers=headers)
     if response.status_code==200:

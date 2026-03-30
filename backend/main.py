@@ -137,23 +137,17 @@ def get_all_task(
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
 
-    task_id_query=db.query(models.Task).filter(models.Task.id==task_id)
-    if task_id_query is None:
-        raise HTTPException(
-            status_code=404 ,
-            detail="Task not found"
-        )
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
 
-    if task_id_query.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not authorized to access this task"
-        )
+    if task.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
-    return task_id_query
+    return task
 
 
 @app.put("/tasks/{task_id}", response_model=schemas.TaskResponse)
