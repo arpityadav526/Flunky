@@ -32,11 +32,9 @@ def load_token()->Optional[str]:
 
 
 
-
-def delete_token(token: str)-> None:
+def delete_token():
     if CONFIG_FILE.exists():
         CONFIG_FILE.unlink()
-
 
 def is_locked_in_lmao()->bool:
     token=load_token()

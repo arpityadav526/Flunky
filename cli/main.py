@@ -220,9 +220,9 @@ def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as co
         token = load_token()
         updated_task = api_update_task(task_id, token, is_completed=True)
         console.print(f"✅ Task '{updated_task['title']}' marked as complete!", style="green")
-    except Exception as e:
-        console.print(f"❌ Failed to complete task: {e}", style="red")
 
+    except Exception as e:
+        console.print(f"❌ Failed to complete task: {str(e)}", style="red")
 
 @task_app.command("delete")
 def delete_task_command(

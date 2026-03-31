@@ -126,33 +126,36 @@ def get_task_by_id(task_id: int, token: str)->Dict[str, any]:
         raise Exception("not authorized")
 
 
+def get_auth_headers(token: str):
+    return {"Authorization": f"Bearer {token.strip()}"}
 
-def update_task(task_id:int , token: str, title: Optional[str] = None,
-    description: Optional[str] = None,
-    is_completed: Optional[bool] = None
-) -> Dict[str, Any]:
 
-    headers={
-        "Authorization": f"Bearer {token.strip()}"
-    }
+def update_task(task_id: int, token: str, title=None, description=None, is_completed=None):
+    payload = {}
 
-    data = {}
     if title is not None:
-        data["title"] = title
+        payload["title"] = title
     if description is not None:
-        data["description"] = description
+        payload["description"] = description
     if is_completed is not None:
-        data["is_completed"] = is_completed
+        payload["is_completed"] = is_completed
 
-    params = {}
-    if is_completed is not None:
-        params["Completed"] = is_completed
+    response = httpx.put(
+        f"{BASE_URL}/tasks/{task_id}",
+        json=payload,
+        headers=get_auth_headers(token),
+        timeout=10.0,
+    )
 
+    if response.status_code == 200:
+        return response.json()
 
-        response=httpx.post(f"{BASE_URL}/tasks/{task_id}", headers=headers, json=data, params=params)
+    try:
+        detail = response.json().get("detail")
+    except Exception:
+        detail = response.text
 
-        if response.status_code==200:
-            return response.json()
+    raise Exception(detail)
 
 
 
