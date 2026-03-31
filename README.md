@@ -1,111 +1,233 @@
-# FLUNKY - Task Management CLI
+# FLUNKY – Full-Stack Task Management CLI
 
-A beautiful command-line task manager with FastAPI backend.
+FLUNKY is a production-ready task management system built with a FastAPI backend and a powerful CLI interface. It enables developers to manage tasks efficiently directly from the terminal with secure authentication, clean UI, and automated workflows.
 
-## Features
-- 🔐 Secure authentication (JWT)
-- 📝 Create, update, delete tasks
-- 📊 Beautiful terminal tables
-- 💾 Persistent login
-- 🎨 Rich terminal UI
+---
 
-## Installation
+## 🚀 Features
 
-1. Clone the repo
-2. Install: `pip install -e .`
-3. Start backend: `uvicorn backend.main:app --reload`
-4. Use CLI: `flunky --help`
+### 🔐 Authentication
 
-## Quick Start
+* JWT-based secure authentication
+* Password hashing using bcrypt
+* Persistent login via local token storage
 
-\`\`\`bash
-# Register
-flunky register
+### 📝 Task Management
 
-# Login
-flunky login
+* Create, update, delete tasks
+* Mark tasks as complete
+* Filter tasks by status
+* User-specific task isolation
 
-# Create a task
-flunky task create -t "Learn Python" -d "Complete tutorial"
+### 💻 CLI Experience
 
-# List tasks
-flunky task list
+* Built with Typer + Rich
+* Interactive prompts + command-line arguments (dual mode)
+* Beautiful tables, panels, and colored output
 
-# Mark complete
-flunky task complete 1
-\`\`\`
+### ⚙️ Backend (FastAPI)
 
-## Tech Stack
-- **Backend:** FastAPI, SQLAlchemy, JWT
-- **CLI:** Typer, Rich, HTTPX
-- **Database:** SQLite
+* 7 REST API endpoints
+* Dependency injection with `Depends`
+* Pydantic validation
+* SQLAlchemy ORM
+
+### 🧪 Testing
+
+* Pytest-based test suite
+* Covers authentication and task workflows
+* Includes edge cases (invalid login, unauthorized access, etc.)
+
+### 🐳 Docker Support
+
+* Lightweight containerized backend
+* Optimized image size (~220MB)
+* Ready for deployment
+
+### 🔄 CI/CD (GitHub Actions)
+
+* Automated testing on every push and PR
+* Docker image build validation
+* Ensures production stability
+
+---
+
+## 🏗️ Architecture
+
+```
+flunky/
+├── backend/        # FastAPI backend
+├── cli/            # CLI interface
+├── tests/          # pytest test suite
+├── Dockerfile
+├── requirements.txt
+└── .github/workflows/   # CI/CD pipelines
 ```
 
 ---
 
-### **Step 14: Testing & Bug Fixes** ⏱️ ~15-20 mins
+## 🛠️ Tech Stack
 
-**Full test flow:**
-
-1. ✅ Register new user
-2. ✅ Login
-3. ✅ Create 3-5 tasks
-4. ✅ List all tasks
-5. ✅ Show one task
-6. ✅ Update task (both modes)
-7. ✅ Complete a task
-8. ✅ Filter by completed
-9. ✅ Delete a task
-10. ✅ Logout
-11. ✅ Try task command (should fail - not logged in)
-12. ✅ Login again (token should load)
-
-**Edge cases to test:**
-- Try to access non-existent task ID
-- Try to access another user's task (register 2nd user)
-- Try empty title/description
-- Try special characters in inputs
-- Stop backend mid-operation
+* **Backend:** FastAPI, SQLAlchemy, Pydantic
+* **Authentication:** JWT (python-jose), bcrypt
+* **CLI:** Typer, Rich, HTTPX
+* **Database:** SQLite (local), PostgreSQL-ready
+* **Testing:** Pytest, pytest-cov
+* **DevOps:** Docker, GitHub Actions
 
 ---
 
-## 🎁 Optional Enhancements (If You Want to Go Further):
+## ⚡ Installation
 
-### **Nice-to-Have Features:**
+### 1. Clone the repository
 
-1. **Task Priorities** 
-   - Add priority field (High/Medium/Low)
-   - Color code in table
+```bash
+git clone https://github.com/your-username/flunky.git
+cd flunky
+```
 
-2. **Due Dates**
-   - Add deadline field
-   - Show overdue tasks in red
+### 2. Create virtual environment
 
-3. **Task Search**
-   - `flunky task search "keyword"`
+```bash
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+```
 
-4. **Export Tasks**
-   - `flunky task export tasks.json`
+### 3. Install dependencies
 
-5. **Task Statistics**
-   - `flunky stats` - Show completion rate, total tasks, etc.
-
-6. **Spinner/Progress Indicators**
-   - Show loading spinner during API calls
-
-7. **Config Commands**
-   - `flunky config show` - Show current settings
-   - `flunky config set-backend <url>` - Change backend URL
+```bash
+pip install -r requirements.txt
+pip install -e .
+```
 
 ---
 
-## 📊 Current Project Status:
+## ▶️ Running the Application
+
+### Start backend
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+API Docs:
+http://127.0.0.1:8000/docs
+
+---
+
+## 💻 CLI Usage
+
+### Register
+
+```bash
+flunky register
+```
+
+### Login
+
+```bash
+flunky login
+```
+
+### Create task
+
+```bash
+flunky task create -t "Learn FastAPI" -d "Build backend project"
+```
+
+### List tasks
+
+```bash
+flunky task list
+```
+
+### Complete task
+
+```bash
+flunky task complete 1
+```
+
+### Delete task
+
+```bash
+flunky task delete 1
+```
+
+---
+
+## 🧪 Running Tests
+
+```bash
+pytest --cov=backend --cov=cli
+```
+
+---
+
+## 🐳 Docker
+
+### Build image
+
+```bash
+docker build -t flunky .
+```
+
+### Run container
+
+```bash
+docker run -p 8000:8000 flunky
+```
+
+---
+
+## 🔄 CI/CD
+
+This project uses GitHub Actions to:
+
+* Run automated tests on every push and pull request
+* Validate Docker image builds successfully
+
+Workflows:
+
+* FLUNKY CI
+* Docker Build Check
+
+---
+
+## 📊 Current Status
+
 ```
 ✅ Backend API          - COMPLETE
 ✅ Authentication       - COMPLETE
-✅ Token Storage        - COMPLETE  
-✅ CLI Commands         - COMPLETE
-⚠️  Error Handling      - NEEDS POLISH
-⚠️  Installation Setup  - NEEDS SETUP.PY
-⚠️  Documentation       - NEEDS README
-⚠️  Full Testing        - NEEDS TESTING
+✅ CLI System           - COMPLETE
+✅ Task CRUD            - COMPLETE
+✅ Testing (pytest)     - COMPLETE
+✅ Dockerization        - COMPLETE
+✅ CI/CD (GitHub Actions) - COMPLETE
+⚠️ Advanced Features    - IN PROGRESS
+```
+
+---
+
+## 🔮 Future Improvements
+
+* Task statistics (`flunky stats`)
+* Search functionality
+* Task priorities & due dates
+* Export/import tasks
+* Deployment to cloud (Render/Railway)
+
+---
+
+## 📌 Author
+
+**Arpit Yadav**
+B.Tech CSE (Data Science)
+
+GitHub: https://github.com/arpityadav526
+LinkedIn: https://www.linkedin.com/in/arpit-yadav-63b2b6293
+
+---
+
+## ⭐ If you like this project
+
+Give it a star ⭐ and feel free to contribute!
