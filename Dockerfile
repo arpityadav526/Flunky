@@ -1,22 +1,21 @@
-# Use official Python runtime as base image
 FROM python:3.11-slim
 
-# Set working directory in container
 WORKDIR /app
 
-# Copy requirements file
+# Install system dependencies (optional but safe)
+RUN apt-get update && apt-get install -y gcc
+
+# Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend code
-COPY backend/ ./backend/
+# Copy project files
+COPY backend/ backend/
 
-# Expose port 8000
+# Expose port
 EXPOSE 8000
 
-# Command to run the application
+# Run FastAPI
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
