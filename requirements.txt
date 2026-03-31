@@ -32,3 +32,4 @@ SQLAlchemy~=2.0.45
 passlib~=1.7.4
 python-jose~=3.5.0
 tensorflow~=2.20.0
+python-dotenv==1.0.1

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.flunky/
+.pytest_cache/
+.coverage
+htmlcov/
+.idea/
+.DS_Store
+flunky.db
