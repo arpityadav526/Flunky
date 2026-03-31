@@ -1,5 +1,3 @@
-## **Create `.dockerignore` file:**
-```
 # Python
 __pycache__/
 *.pyc
@@ -22,15 +20,18 @@ env/
 
 # Git
 .git/
-.gitignore
 
 # Database
 *.db
 *.sqlite3
 
-# Config
+# Local config
 .flunky/
-cli/
 
 # OS
 .DS_Store
+
+# Tests cache
+.pytest_cache/
+.coverage
+htmlcov/
