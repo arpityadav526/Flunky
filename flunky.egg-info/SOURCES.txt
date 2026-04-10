@@ -2,13 +2,17 @@ README.md
 setup.py
 backend/Auth.py
 backend/__init__.py
+backend/config.py
 backend/database.py
+backend/debug_api_check.py
+backend/logger.py
 backend/main.py
 backend/models.py
 backend/schemas.py
 cli/__init__.py
 cli/api_client.py
 cli/config.py
+cli/debug_token.py
 cli/main.py
 flunky.egg-info/PKG-INFO
 flunky.egg-info/SOURCES.txt
@@ -16,3 +20,5 @@ flunky.egg-info/dependency_links.txt
 flunky.egg-info/entry_points.txt
 flunky.egg-info/requires.txt
 flunky.egg-info/top_level.txt
+tests/test_auth.py
+tests/test_task.py

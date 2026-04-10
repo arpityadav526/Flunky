@@ -2,8 +2,13 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-python-jose[cryptography]
+python-jose
 passlib[bcrypt]
+python-dotenv
+python-multipart
 typer
 rich
 httpx
+requests
+email-validator
+jinja2
