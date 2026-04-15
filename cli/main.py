@@ -16,10 +16,26 @@ from cli.api_client import (
     task_func as api_task_create,
     update_task as api_update_task,
 )
+from cli.services.projects import (
+    add_project,
+    get_project_path,
+    list_projects,
+    remove_project,
+)
+from cli.services.vscode import open_in_vscode
 
-app = typer.Typer(help="FLUNKY - MY TASK MANAGEMENT CLI")
+app = typer.Typer(help="FLUNKY - Developer Productivity CLI")
 task_app = typer.Typer(help="Commands for task management")
+projects_app = typer.Typer(help="Commands for project shortcuts")
+init_app = typer.Typer(help="Commands for project scaffolding")
+setup_app = typer.Typer(help="Commands for dependency and environment setup")
+ai_app = typer.Typer(help="AI-assisted developer commands")
+
 app.add_typer(task_app, name="task")
+app.add_typer(projects_app, name="projects")
+app.add_typer(init_app, name="init")
+app.add_typer(setup_app, name="setup")
+app.add_typer(ai_app, name="ai")
 
 console = Console()
 
@@ -129,6 +145,7 @@ def list_task(
     except Exception as e:
         console.print(f"❌ Failed to get tasks: {str(e)}", style="red")
 
+
 @task_app.command("show")
 def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
     if not is_locked_in_lmao():
@@ -220,9 +237,9 @@ def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as co
         token = load_token()
         updated_task = api_update_task(task_id, token, is_completed=True)
         console.print(f"✅ Task '{updated_task['title']}' marked as complete!", style="green")
-
     except Exception as e:
         console.print(f"❌ Failed to complete task: {str(e)}", style="red")
+
 
 @task_app.command("delete")
 def delete_task_command(
@@ -246,6 +263,55 @@ def delete_task_command(
         console.print("🗑️ Task deleted successfully!", style="green")
     except Exception as e:
         console.print(f"❌ Failed to delete task: {e}", style="red")
+
+
+@projects_app.command("add")
+def add_project_command(name: str, path: str):
+    try:
+        project_name, project_path = add_project(name, path)
+        console.print(f"✅ Added project '[bold]{project_name}[/bold]' → {project_path}", style="green")
+    except Exception as e:
+        console.print(f"❌ {e}", style="red")
+
+
+@projects_app.command("list")
+def list_projects_command():
+    try:
+        projects = list_projects()
+
+        if not projects:
+            console.print("⚠️ No saved projects found.", style="yellow")
+            return
+
+        table = Table(title="Saved Projects")
+        table.add_column("Name", style="cyan")
+        table.add_column("Path", style="magenta")
+
+        for name, path in projects.items():
+            table.add_row(name, path)
+
+        console.print(table)
+    except Exception as e:
+        console.print(f"❌ {e}", style="red")
+
+
+@projects_app.command("remove")
+def remove_project_command(name: str):
+    try:
+        removed_name = remove_project(name)
+        console.print(f"🗑️ Removed project '{removed_name}'", style="green")
+    except Exception as e:
+        console.print(f"❌ {e}", style="red")
+
+
+@app.command("open")
+def open_project_command(name: str):
+    try:
+        project_path = get_project_path(name)
+        open_in_vscode(project_path)
+        console.print(f"🚀 Opened '{name}' in VS Code", style="green")
+    except Exception as e:
+        console.print(f"❌ {e}", style="red")
 
 
 if __name__ == "__main__":
