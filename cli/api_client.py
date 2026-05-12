@@ -8,7 +8,7 @@ from rich.console import Console
 console = Console()
 
 # Base URL of the  FastAPI backend
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 
 def register_user(username: str, email: str, password: str):
