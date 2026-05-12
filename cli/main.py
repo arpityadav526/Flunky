@@ -64,15 +64,42 @@ def create_project(
 def register():
     console.print(Panel.fit("📝 User Registration"))
 
-    username = Prompt.ask("Username")
-    email = Prompt.ask("E-mail")
-    password = Prompt.ask("Password", password=True)
+    while True:
+        username = Prompt.ask("Username")
+        if not username or len(username) < 3:
+            console.print("[red]Username must be at least 3 characters.[/red]")
+            continue
+        break
 
-    try:
-        user = register_user(username, email, password)
-        console.print(f"✅ Registration successful. Welcome, {user['username']}!", style="green")
-    except Exception as e:
-        console.print(f"❌ Registration failed: {e}", style="red")
+    import re
+    while True:
+        email = Prompt.ask("E-mail")
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            console.print("[red]Invalid email address.[/red]")
+            continue
+        break
+
+    while True:
+        password = Prompt.ask("Password", password=True)
+        password2 = Prompt.ask("Confirm Password", password=True)
+        if password != password2:
+            console.print("[red]Passwords do not match.[/red]")
+            continue
+        if len(password) < 6:
+            console.print("[red]Password must be at least 6 characters.[/red]")
+            continue
+        break
+
+    with console.status("[bold green]Registering..."):
+        try:
+            user = register_user(username, email, password)
+            console.print(f"✅ Registration successful. Welcome, {user['username']}!", style="green")
+        except Exception as e:
+            msg = str(e)
+            if "already exists" in msg:
+                console.print("[red]Username or email already registered.[/red]")
+            else:
+                console.print(f"❌ Registration failed: {msg}", style="red")
 
 
 @app.command()
@@ -82,13 +109,18 @@ def login():
     username = Prompt.ask("Username")
     password = Prompt.ask("Password", password=True)
 
-    try:
-        result = login_user(username, password)
-        token = result["access_token"]
-        save_token(token)
-        console.print("✅ Login successful. Token saved.", style="green")
-    except Exception as e:
-        console.print(f"❌ Login failed: {e}", style="red")
+    with console.status("[bold green]Logging in..."):
+        try:
+            result = login_user(username, password)
+            token = result["access_token"]
+            save_token(token)
+            console.print("✅ Login successful. Token saved.", style="green")
+        except Exception as e:
+            msg = str(e)
+            if "401" in msg or "invalid" in msg:
+                console.print("[red]Invalid username or password.[/red]")
+            else:
+                console.print(f"❌ Login failed: {msg}", style="red")
 
 
 @app.command()
@@ -123,7 +155,11 @@ def create_task_command(
         console.print("✅ Task created successfully!", style="green")
         console.print(f"ID: {task['id']} | Title: {task['title']}", style="cyan")
     except Exception as e:
-        console.print(f"❌ Failed to create task: {e}", style="red")
+        msg = str(e)
+        if "expired" in msg or "token" in msg:
+            console.print("[red]Session expired. Please login again.[/red]")
+        else:
+            console.print(f"❌ Failed to create task: {msg}", style="red")
 
 
 @task_app.command("list")
@@ -163,7 +199,11 @@ def list_task(
         console.print(f"\nTotal: {len(tasks)} task(s)", style="dim")
 
     except Exception as e:
-        console.print(f"❌ Failed to get tasks: {str(e)}", style="red")
+        msg = str(e)
+        if "expired" in msg or "token" in msg:
+            console.print("[red]Session expired. Please login again.[/red]")
+        else:
+            console.print(f"❌ Failed to get tasks: {msg}", style="red")
 
 
 @task_app.command("show")
@@ -291,7 +331,11 @@ def add_project_command(name: str, path: str):
         project_name, project_path = add_project(name, path)
         console.print(f"✅ Added project '[bold]{project_name}[/bold]' → {project_path}", style="green")
     except Exception as e:
-        console.print(f"❌ {e}", style="red")
+        msg = str(e)
+        if "invalid" in msg:
+            console.print(f"[red]Invalid project name or path: {msg}")
+        else:
+            console.print(f"❌ {msg}", style="red")
 
 
 @projects_app.command("list")
