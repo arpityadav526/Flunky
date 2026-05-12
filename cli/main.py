@@ -16,6 +16,7 @@ from cli.api_client import (
     task_func as api_task_create,
     update_task as api_update_task,
 )
+
 from cli.services.projects import (
     add_project,
     get_project_path,
@@ -23,6 +24,8 @@ from cli.services.projects import (
     remove_project,
 )
 from cli.services.vscode import open_in_vscode
+from cli.services import scaffold
+from cli.utils import validators
 
 app = typer.Typer(help="FLUNKY - Developer Productivity CLI")
 task_app = typer.Typer(help="Commands for task management")
@@ -38,6 +41,23 @@ app.add_typer(setup_app, name="setup")
 app.add_typer(ai_app, name="ai")
 
 console = Console()
+
+# --- Project Scaffolding ---
+@init_app.command("create")
+def create_project(
+    project_type: str = typer.Argument(..., help="Type of project to create (e.g. fastapi, mern, cli, ds)"),
+    project_name: str = typer.Argument(..., help="Name of the new project")
+):
+    """Create a new project from a template."""
+    if not validators.is_valid_project_name(project_name):
+        console.print(f"[red]Invalid project name: {project_name}[/red]")
+        raise typer.Exit(1)
+    try:
+        path = scaffold.scaffold_project(project_type, project_name)
+        console.print(f"[green]Project created at {path}[/green]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
 
 
 @app.command()

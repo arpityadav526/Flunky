@@ -1,0 +1,12 @@
+{
+  "name": "flutter",
+  "description": "Flutter mobile app starter (iOS/Android)",
+  "dependencies": [],
+  "post_create": [
+    "flutter create {{ project_name }}"
+  ],
+  "files": [
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

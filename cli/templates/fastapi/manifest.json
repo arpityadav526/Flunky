@@ -1,0 +1,14 @@
+{
+  "name": "fastapi",
+  "description": "FastAPI starter template",
+  "dependencies": ["fastapi", "uvicorn"],
+  "post_create": [
+    "python -m venv venv",
+    "venv/bin/pip install fastapi uvicorn"
+  ],
+  "files": [
+    {"src": "main.py.j2", "dest": "main.py"},
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

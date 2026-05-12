@@ -1,0 +1,14 @@
+{
+  "name": "cli",
+  "description": "Python CLI starter template (Typer)",
+  "dependencies": ["typer", "rich"],
+  "post_create": [
+    "python -m venv venv",
+    "venv/bin/pip install typer rich"
+  ],
+  "files": [
+    {"src": "main.py.j2", "dest": "main.py"},
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "mern",
+  "description": "MERN stack starter template (React + Express)",
+  "dependencies": [],
+  "post_create": [
+    "npx create-react-app frontend",
+    "npx express-generator backend",
+    "cd backend && npm install"
+  ],
+  "files": [
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

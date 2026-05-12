@@ -1,0 +1,12 @@
+{
+  "name": "react-native",
+  "description": "React Native mobile app starter (iOS/Android)",
+  "dependencies": [],
+  "post_create": [
+    "npx react-native init {{ project_name }}"
+  ],
+  "files": [
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

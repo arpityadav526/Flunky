@@ -1,0 +1,12 @@
+{
+  "name": "electron",
+  "description": "Electron desktop app starter",
+  "dependencies": [],
+  "post_create": [
+    "npx create-electron-app {{ project_name }}"
+  ],
+  "files": [
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

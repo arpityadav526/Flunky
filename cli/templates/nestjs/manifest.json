@@ -1,0 +1,13 @@
+{
+  "name": "nestjs",
+  "description": "NestJS backend API starter (TypeScript)",
+  "dependencies": [],
+  "post_create": [
+    "npm i -g @nestjs/cli",
+    "nest new {{ project_name }} --package-manager npm"
+  ],
+  "files": [
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

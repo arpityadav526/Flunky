@@ -1,0 +1,14 @@
+{
+  "name": "ds",
+  "description": "Data Science starter template (Jupyter, pandas, numpy)",
+  "dependencies": ["jupyter", "pandas", "numpy"],
+  "post_create": [
+    "python -m venv venv",
+    "venv/bin/pip install jupyter pandas numpy"
+  ],
+  "files": [
+    {"src": "notebook.ipynb.j2", "dest": "notebook.ipynb"},
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}

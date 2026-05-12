@@ -1,0 +1,13 @@
+{
+  "name": "python",
+  "description": "Basic Python project starter template",
+  "dependencies": [],
+  "post_create": [
+    "python -m venv venv"
+  ],
+  "files": [
+    {"src": "main.py.j2", "dest": "main.py"},
+    {"src": "README.md.j2", "dest": "README.md"},
+    {"src": ".gitignore.j2", "dest": ".gitignore"}
+  ]
+}
