@@ -27,12 +27,26 @@ from cli.services.vscode import open_in_vscode
 from cli.services import scaffold
 from cli.utils import validators
 
-app = typer.Typer(help="FLUNKY - Developer Productivity CLI")
-task_app = typer.Typer(help="Commands for task management")
-projects_app = typer.Typer(help="Commands for project shortcuts")
-init_app = typer.Typer(help="Commands for project scaffolding")
-setup_app = typer.Typer(help="Commands for dependency and environment setup")
-ai_app = typer.Typer(help="AI-assisted developer commands")
+
+STACK_ICONS = {
+    "fastapi": "⚡",
+    "mern": "🌱",
+    "cli": "💻",
+    "python": "🐍",
+    "ds": "📊",
+    "react-native": "📱",
+    "flutter": "🦋",
+    "nextjs": "⏭️",
+    "nestjs": "🚀",
+    "electron": "🖥️",
+}
+
+app = typer.Typer(help="[bold blue]FLUNKY[/bold blue] - [green]Developer Productivity CLI[/green]")
+task_app = typer.Typer(help="[yellow]Commands for task management[/yellow]")
+projects_app = typer.Typer(help="[magenta]Commands for project shortcuts[/magenta]")
+init_app = typer.Typer(help="[cyan]Commands for project scaffolding[/cyan]")
+setup_app = typer.Typer(help="[blue]Commands for dependency and environment setup[/blue]")
+ai_app = typer.Typer(help="[bold]AI-assisted developer commands[/bold]")
 
 app.add_typer(task_app, name="task")
 app.add_typer(projects_app, name="projects")
@@ -45,18 +59,20 @@ console = Console()
 # --- Project Scaffolding ---
 @init_app.command("create")
 def create_project(
-    project_type: str = typer.Argument(..., help="Type of project to create (e.g. fastapi, mern, cli, ds)"),
+    project_type: str = typer.Argument(..., help="Type of project to create (e.g. fastapi, mern, cli, ds, nextjs, etc.)"),
     project_name: str = typer.Argument(..., help="Name of the new project")
 ):
     """Create a new project from a template."""
+    icon = STACK_ICONS.get(project_type, "📦")
     if not validators.is_valid_project_name(project_name):
-        console.print(f"[red]Invalid project name: {project_name}[/red]")
+        console.print(Panel(f"[red]Invalid project name: {project_name}[/red]", title="❌ Error", border_style="red"))
         raise typer.Exit(1)
     try:
-        path = scaffold.scaffold_project(project_type, project_name)
-        console.print(f"[green]Project created at {path}[/green]")
+        with console.status(f"[bold green]Scaffolding {icon} {project_type} project...[/bold green]"):
+            path = scaffold.scaffold_project(project_type, project_name)
+        console.print(Panel(f"{icon} [green]Project created at [bold]{path}[/bold][/green]", title="✅ Success", border_style="green"))
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(Panel(f"[red]{e}[/red]", title="❌ Error", border_style="red"))
         raise typer.Exit(1)
 
 
@@ -344,39 +360,62 @@ def list_projects_command():
         projects = list_projects()
 
         if not projects:
-            console.print("⚠️ No saved projects found.", style="yellow")
+            console.print(Panel("No saved projects found.", title="📁 Projects", border_style="yellow"))
             return
 
-        table = Table(title="Saved Projects")
-        table.add_column("Name", style="cyan")
+        table = Table(title="[bold magenta]Saved Projects[/bold magenta]", show_header=True, header_style="bold magenta")
+        table.add_column("Name", style="cyan", justify="right")
         table.add_column("Path", style="magenta")
 
         for name, path in projects.items():
-            table.add_row(name, path)
+            icon = "📁"
+            table.add_row(f"{icon} {name}", path)
 
         console.print(table)
     except Exception as e:
-        console.print(f"❌ {e}", style="red")
+        console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
 
 @projects_app.command("remove")
 def remove_project_command(name: str):
-    try:
-        removed_name = remove_project(name)
-        console.print(f"🗑️ Removed project '{removed_name}'", style="green")
-    except Exception as e:
-        console.print(f"❌ {e}", style="red")
+    def list_task(
+        completed: Optional[bool] = typer.Option(None, "--completed", help="Filter by completion status")
+    ):
+        if not is_locked_in_lmao():
+            console.print(Panel("Please login first!", title="🔒 Auth Required", border_style="red"))
+            return
 
+        try:
+            token = load_token()
+            tasks = get_all_task(token, completed=completed)
 
-@app.command("open")
-def open_project_command(name: str):
-    try:
-        project_path = get_project_path(name)
-        open_in_vscode(project_path)
-        console.print(f"🚀 Opened '{name}' in VS Code", style="green")
-    except Exception as e:
-        console.print(f"❌ {e}", style="red")
+            if not tasks:
+                console.print(Panel("No tasks found!", title="📋 Tasks", border_style="yellow"))
+                return
 
+            table = Table(title="[bold green]Your Tasks[/bold green]", show_header=True, header_style="bold green")
+            table.add_column("ID", style="cyan", width=6)
+            table.add_column("Title", style="white", width=30)
+            table.add_column("Description", style="dim", width=40)
+            table.add_column("Status", style="green", width=12)
 
-if __name__ == "__main__":
-    app()
+            for task in tasks:
+                status = "✅ Done" if task["is_completed"] else "⏳ Pending"
+                status_style = "green" if task["is_completed"] else "yellow"
+                icon = "✔️" if task["is_completed"] else "🕒"
+                table.add_row(
+                    str(task["id"]),
+                    f"{icon} {task['title']}",
+                    task.get("description") or "-",
+                    f"[{status_style}]{status}[/{status_style}]"
+                )
+
+            console.print(table)
+            console.print(f"[dim]Total: {len(tasks)} task(s)[/dim]")
+
+        except Exception as e:
+            msg = str(e)
+            if "expired" in msg or "token" in msg:
+                console.print(Panel("Session expired. Please login again.", title="🔒 Auth Required", border_style="red"))
+            else:
+                console.print(Panel(f"Failed to get tasks: {msg}", title="❌ Error", border_style="red"))
