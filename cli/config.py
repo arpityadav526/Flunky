@@ -41,6 +41,24 @@ def is_locked_in_lmao()->bool:
     return token is not None
 
 
+def get_logged_in_username() -> Optional[str]:
+    import base64
+    import json
+    token = load_token()
+    if not token:
+        return None
+    try:
+        parts = token.split(".")
+        if len(parts) < 2:
+            return None
+        payload_part = parts[1]
+        payload_part += "=" * ((4 - len(payload_part) % 4) % 4)
+        payload = json.loads(base64.b64decode(payload_part).decode("utf-8"))
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
 
 
 

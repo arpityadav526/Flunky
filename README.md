@@ -77,24 +77,45 @@ flunky/
 
 ---
 
-## ⚡ Installation
+## ⚡ Installation & Setup
 
-### 1. Clone the repository
+You can install FLUNKY either globally (recommended for daily use) or locally for development.
+
+### 🌍 1. Global Cross-Platform Installation (Recommended)
+
+To install FLUNKY globally on **macOS**, **Linux**, or **Windows** without cloning the repository, use **`pipx`** (the standard way to run isolated Python CLI tools):
 
 ```bash
-git clone https://github.com/your-username/flunky.git
+# Install globally from GitHub directly
+pipx install git+https://github.com/arpityadav526/flunky.git
+```
+
+*Note: If you don't have `pipx`, you can install it via Homebrew (`brew install pipx`), apt (`sudo apt install pipx`), or pip (`pip install pipx`).*
+
+Alternatively, you can install it globally via standard `pip`:
+```bash
+pip install git+https://github.com/arpityadav526/flunky.git
+```
+
+---
+
+### 💻 2. Local Development Installation
+
+If you want to run the backend and contribute to the CLI code:
+
+#### A. Clone the repository
+```bash
+git clone https://github.com/arpityadav526/flunky.git
 cd flunky
 ```
 
-### 2. Create virtual environment
-
+#### B. Create virtual environment
 ```bash
 python -m venv venv
-source venv/bin/activate  # macOS/Linux
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
-### 3. Install dependencies
-
+#### C. Install dependencies & CLI in editable mode
 ```bash
 pip install -r requirements.txt
 pip install -e .

@@ -6,7 +6,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from cli.config import delete_token, is_locked_in_lmao, load_token, save_token
+from cli.config import delete_token, get_logged_in_username, is_locked_in_lmao, load_token, save_token
 from cli.api_client import (
     delete_task as api_delete_task,
     get_all_task,
@@ -378,44 +378,52 @@ def list_projects_command():
 
 @projects_app.command("remove")
 def remove_project_command(name: str):
-    def list_task(
-        completed: Optional[bool] = typer.Option(None, "--completed", help="Filter by completion status")
-    ):
-        if not is_locked_in_lmao():
-            console.print(Panel("Please login first!", title="🔒 Auth Required", border_style="red"))
-            return
+    try:
+        removed = remove_project(name)
+        console.print(f"🗑️ Removed project '[bold]{removed}[/bold]'", style="green")
+    except Exception as e:
+        console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
-        try:
-            token = load_token()
-            tasks = get_all_task(token, completed=completed)
 
-            if not tasks:
-                console.print(Panel("No tasks found!", title="📋 Tasks", border_style="yellow"))
-                return
+@app.callback(invoke_without_command=True)
+def main_callback(ctx: typer.Context):
+    """
+    [bold blue]FLUNKY[/bold blue] - [green]Developer Productivity CLI[/green]
+    """
+    if ctx.invoked_subcommand is not None:
+        return
 
-            table = Table(title="[bold green]Your Tasks[/bold green]", show_header=True, header_style="bold green")
-            table.add_column("ID", style="cyan", width=6)
-            table.add_column("Title", style="white", width=30)
-            table.add_column("Description", style="dim", width=40)
-            table.add_column("Status", style="green", width=12)
+    banner = """[bold cyan]
+███████╗██╗     ██╗   ██╗███╗   ██╗██╗  ██╗██╗   ██╗
+██╔════╝██║     ██║   ██║████╗  ██║██║ ██╔╝╚██╗ ██╔╝
+█████╗  ██║     ██║   ██║██╔██╗ ██║█████╔╝  ╚████╔╝ 
+██╔══╝  ██║     ██║   ██║██║╚██╗██║██╔═██╗   ╚██╔╝  
+██║     ███████╗╚██████╔╝██║ ╚████║██║  ██╗   ██║   
+╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝   
+[/bold cyan]"""
 
-            for task in tasks:
-                status = "✅ Done" if task["is_completed"] else "⏳ Pending"
-                status_style = "green" if task["is_completed"] else "yellow"
-                icon = "✔️" if task["is_completed"] else "🕒"
-                table.add_row(
-                    str(task["id"]),
-                    f"{icon} {task['title']}",
-                    task.get("description") or "-",
-                    f"[{status_style}]{status}[/{status_style}]"
-                )
+    console.print(banner)
 
-            console.print(table)
-            console.print(f"[dim]Total: {len(tasks)} task(s)[/dim]")
+    username = get_logged_in_username()
+    if username:
+        auth_status = f"[bold green]● Locked in as:[/bold green] [bold white]{username}[/bold white] 🔓"
+    else:
+        auth_status = "[bold yellow]○ Not logged in[/bold yellow] 🔒 (Run [cyan]flunky login[/cyan])"
 
-        except Exception as e:
-            msg = str(e)
-            if "expired" in msg or "token" in msg:
-                console.print(Panel("Session expired. Please login again.", title="🔒 Auth Required", border_style="red"))
-            else:
-                console.print(Panel(f"Failed to get tasks: {msg}", title="❌ Error", border_style="red"))
+    welcome_panel = Panel(
+        f"{auth_status}\n\n"
+        "[bold cyan]⚡ Quick Commands:[/bold cyan]\n"
+        "  • [yellow]flunky init create <stack> <name>[/yellow]   - Scaffold a new project\n"
+        "  • [yellow]flunky task list[/yellow]                 - Show your tasks\n"
+        "  • [yellow]flunky task create[/yellow]               - Create a new task\n"
+        "  • [yellow]flunky projects list[/yellow]             - View registered local projects\n\n"
+        "[bold dim]Run any command with --help for options.[/bold dim]",
+        title="[bold white]🚀 Welcome to FLUNKY[/bold white]",
+        border_style="cyan",
+        expand=False
+    )
+    console.print(welcome_panel)
+
+
+if __name__ == "__main__":
+    app()
