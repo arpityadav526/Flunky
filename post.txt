@@ -1,0 +1,24 @@
+🚀 Building in Public: Squashing bugs and hardening FLUNKY!  squashed bugs & polished my developer productivity CLI tool! 💻✨
+
+I’ve been working on **FLUNKY**—a production-ready, full-stack task management and project scaffolding CLI built with FastAPI, Typer, Rich, and SQLAlchemy. Today, I did a deep-dive session to debug, fix, and harden the core pipeline to ensure seamless developer onboarding and tool generation.
+
+Here is what I just built, fixed, and shipped:
+
+1️⃣ **Unified the API Network Configuration:** 
+Fixed a networking conflict where the CLI was routing API queries to port `8001` while the FastAPI backend was served on `8000`. Now the end-to-end integration works perfectly out of the box! 
+
+2️⃣ **Corrected the Task Management Data Pipeline:**
+Fixed a sneaky parameter order mismatch bug (`title` vs. `description`) in the backend API client wrapper. No more inverted tasks—your titles and descriptions now map beautifully in the SQLite DB!
+
+3️⃣ **Hardened Project Scaffolding & Validation:**
+Resolved a critical scaffolding bug (`AttributeError` during project initialization) by implementing a robust regex-based `is_valid_project_name` validator. Now, developers can scaffold multi-stack templates (FastAPI, MERN, Flutter, Data Science/ML, Next.js, and more) instantly and safely with `flunky init create`!
+
+4️⃣ **Full Test Coverage Validation:**
+Validated all fixes against our custom Pytest suite to ensure zero regressions across our JWT authentication mechanisms, SQLite database models, and CRUD services. Everything is passing 12/12 tests! 🎯
+
+Being a developer means realizing that shipping features is only half the battle—the real magic happens when you refine the developer experience (DX), iron out edge cases, and harden integrations.
+
+Check out the repo here to try it out, scaffold your next project, or drop a star! ⭐
+🔗 GitHub: https://github.com/arpityadav526/flunky
+
+#buildinpublic #python #fastapi #typer #developertools #softwareengineering #productivity #scaffolding #backend

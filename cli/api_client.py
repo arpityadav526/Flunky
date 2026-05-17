@@ -8,7 +8,7 @@ from rich.console import Console
 console = Console()
 
 # Base URL of the  FastAPI backend
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 
 
 def register_user(username: str, email: str, password: str):
@@ -71,7 +71,7 @@ def get_auth_headers(token: str):
    
     return {"Authorization": f"Bearer {token.strip()}"}
 
-def task_func(description: str, title: str ,token: str)->Dict[str, any]:
+def task_func(title: str, description: str, token: str)->Dict[str, any]:
     data={
         "task_title": title,
         "task_description": description,

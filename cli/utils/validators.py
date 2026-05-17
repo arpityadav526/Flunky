@@ -15,3 +15,8 @@ def validate_project_path(path: str) -> Path:
     if not project_path.is_dir():
         raise ValueError(f"Path is not a directory: {project_path}")
     return project_path
+
+
+def is_valid_project_name(name: str) -> bool:
+    import re
+    return bool(re.match(r"^[a-zA-Z0-9_-]+$", name))
