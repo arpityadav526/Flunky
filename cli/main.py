@@ -1,9 +1,8 @@
 import typer
 from typing import Optional
+import questionary
 
-from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from cli.config import delete_token, get_logged_in_username, is_locked_in_lmao, load_token, save_token
@@ -19,13 +18,12 @@ from cli.api_client import (
 
 from cli.services.projects import (
     add_project,
-    get_project_path,
     list_projects,
     remove_project,
 )
-from cli.services.vscode import open_in_vscode
 from cli.services import scaffold
 from cli.utils import validators
+from cli.ui_theme import console
 
 
 STACK_ICONS = {
@@ -54,8 +52,7 @@ app.add_typer(init_app, name="init")
 app.add_typer(setup_app, name="setup")
 app.add_typer(ai_app, name="ai")
 
-console = Console()
-
+# console is imported from cli.ui_theme
 # --- Project Scaffolding ---
 @init_app.command("create")
 def create_project(
@@ -80,31 +77,18 @@ def create_project(
 def register():
     console.print(Panel.fit("📝 User Registration"))
 
-    while True:
-        username = Prompt.ask("Username")
-        if not username or len(username) < 3:
-            console.print("[red]Username must be at least 3 characters.[/red]")
-            continue
-        break
+    username = questionary.text("Username:", validate=lambda text: True if len(text) >= 3 else "Username must be at least 3 characters").ask()
+    if not username: return
 
     import re
-    while True:
-        email = Prompt.ask("E-mail")
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            console.print("[red]Invalid email address.[/red]")
-            continue
-        break
+    email = questionary.text("E-mail:", validate=lambda text: True if re.match(r"[^@]+@[^@]+\.[^@]+", text) else "Invalid email address").ask()
+    if not email: return
 
-    while True:
-        password = Prompt.ask("Password", password=True)
-        password2 = Prompt.ask("Confirm Password", password=True)
-        if password != password2:
-            console.print("[red]Passwords do not match.[/red]")
-            continue
-        if len(password) < 6:
-            console.print("[red]Password must be at least 6 characters.[/red]")
-            continue
-        break
+    password = questionary.password("Password:", validate=lambda text: True if len(text) >= 6 else "Password must be at least 6 characters").ask()
+    if not password: return
+
+    password2 = questionary.password("Confirm Password:", validate=lambda text: True if text == password else "Passwords do not match").ask()
+    if not password2: return
 
     with console.status("[bold green]Registering..."):
         try:
@@ -122,8 +106,10 @@ def register():
 def login():
     console.print(Panel.fit("🔐 User Login"))
 
-    username = Prompt.ask("Username")
-    password = Prompt.ask("Password", password=True)
+    username = questionary.text("Username:").ask()
+    if not username: return
+    password = questionary.password("Password:").ask()
+    if not password: return
 
     with console.status("[bold green]Logging in..."):
         try:
@@ -160,10 +146,12 @@ def create_task_command(
         return
 
     if title is None:
-        title = Prompt.ask("Set the Title")
+        title = questionary.text("Set the Title:").ask()
+        if not title: return
 
     if description is None:
-        description = Prompt.ask("Write a description", default="")
+        description = questionary.text("Write a description:", default="").ask()
+        if description is None: return
 
     try:
         token = load_token()
@@ -194,15 +182,15 @@ def list_task(
             console.print("📭 No tasks found!", style="yellow")
             return
 
-        table = Table(title="Your Tasks", show_header=True, header_style="bold magenta")
-        table.add_column("ID", style="cyan", width=6)
+        table = Table(title="Your Tasks", show_header=True, header_style="highlight")
+        table.add_column("ID", style="info", width=6)
         table.add_column("Title", style="white", width=30)
         table.add_column("Description", style="dim", width=40)
-        table.add_column("Status", style="green", width=12)
+        table.add_column("Status", style="success", width=12)
 
         for task in tasks:
             status = "✅ Done" if task["is_completed"] else "⏳ Pending"
-            status_style = "green" if task["is_completed"] else "yellow"
+            status_style = "success" if task["is_completed"] else "warning"
 
             table.add_row(
                 str(task["id"]),
@@ -267,15 +255,18 @@ def update_task_command(
             console.print(f"\n[bold]Updating task: {current_task['title']}[/bold]")
             console.print("[dim]Leave blank to keep current value[/dim]\n")
 
-            new_title = Prompt.ask("New title", default=current_task["title"])
-            new_description = Prompt.ask(
-                "New description",
+            new_title = questionary.text("New title:", default=current_task["title"]).ask()
+            new_description = questionary.text(
+                "New description:",
                 default=current_task.get("description") or ""
-            )
-            mark_complete = Confirm.ask(
+            ).ask()
+            mark_complete = questionary.confirm(
                 "Mark as complete?",
                 default=current_task["is_completed"]
-            )
+            ).ask()
+            
+            if new_title is None or new_description is None or mark_complete is None:
+                raise typer.Exit()
 
             title = new_title if new_title != current_task["title"] else None
             description = (
@@ -331,8 +322,8 @@ def delete_task_command(
         task = get_task_by_id(task_id, token)
 
         if not force:
-            if not Confirm.ask(f"⚠️ Delete '{task['title']}'?", default=False):
-                console.print("Cancelled.", style="yellow")
+            if not questionary.confirm(f"⚠️ Delete '{task['title']}'?", default=False).ask():
+                console.print("Cancelled.", style="warning")
                 return
 
         api_delete_task(task_id, token)
