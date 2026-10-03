@@ -147,40 +147,94 @@ def register():
 
 
 @app.command()
-def login():
-    console.print(Panel.fit("🔐 User Login"))
+def login(
+    with_password: bool = typer.Option(
+        False, "--with-password", help="Use password login instead of browser approval"
+    ),
+    username: str | None = typer.Option(None, "--username", "-u"),
+    password_stdin: bool = typer.Option(False, "--password-stdin", help="Read password from stdin"),
+):
+    """Sign in via browser. Scripts: flunky login --with-password -u alice --password-stdin."""
+    import sys
+    import time
+    import webbrowser
 
-    username = questionary.text("Username:").ask()
-    if not username:
-        return
-    password = questionary.password("Password:").ask()
-    if not password:
-        return
+    from cli.api_client import APIError, _request
 
-    with console.status("[bold green]Logging in..."):
-        try:
+    try:
+        if with_password:
+            username = username or questionary.text("Username:").ask()
+            if not username:
+                return
+            password = (
+                sys.stdin.readline().rstrip("\r\n")
+                if password_stdin
+                else questionary.password("Password:").ask()
+            )
+            if not password:
+                return
             result = login_user(username, password)
-            token = result["access_token"]
-            save_token(token)
-            console.print("✅ Login successful. Token saved.", style="green")
-        except Exception as e:
-            msg = str(e)
-            if "401" in msg or "invalid" in msg:
-                console.print("[red]Invalid username or password.[/red]")
+        else:
+            result = _request("POST", "/v1/auth/device")
+            console.print(
+                Panel(
+                    f"Open {result['verification_uri']}\nEnter code: [bold]{result['user_code']}[/bold]",
+                    title="Sign in to Flunky",
+                )
+            )
+            webbrowser.open(result["verification_uri"])
+            deadline = time.monotonic() + result["expires_in"]
+            interval = result["interval"]
+            device_code = result["device_code"]
+            while time.monotonic() < deadline:
+                time.sleep(interval)
+                try:
+                    result = _request(
+                        "POST", "/v1/auth/device/token", payload={"device_code": device_code}
+                    )
+                    break
+                except APIError as error:
+                    if str(error) == "authorization_pending":
+                        continue
+                    if error.status_code == 429:
+                        interval += 5
+                        continue
+                    raise
             else:
-                console.print(f"❌ Login failed: {msg}", style="red")
-
-            raise typer.Exit(1) from None
+                raise APIError("Device code expired. Run `flunky login` again.")
+        save_token(result["access_token"], result.get("refresh_token"))
+        console.print("Login successful.", style="success")
+    except (APIError, OSError) as error:
+        console.print(f"Login failed: {error}", style="error")
+        raise typer.Exit(1) from None
+    except (KeyboardInterrupt, EOFError):
+        console.print("Sign-in cancelled.", style="warning")
+        raise typer.Exit(130) from None
 
 
 @app.command()
-def logout():
-    if not is_locked_in_lmao():
-        console.print("⚠️ You're not logged in!", style="yellow")
-        return
+def logout(
+    everywhere: bool = typer.Option(
+        False, "--everywhere", help="Revoke every session and automation token"
+    ),
+):
+    """Revoke the current session on the server and remove local credentials."""
+    from cli.api_client import APIError, _request
 
+    token = load_token()
+    if not token:
+        console.print("You're not logged in!", style="warning")
+        return
+    try:
+        _request("POST", "/v1/auth/logout", token=token, params={"everywhere": everywhere})
+    except APIError as error:
+        if error.status_code != 401:
+            console.print(
+                f"Logout failed: {error}. Credentials retained so you can retry.", style="error"
+            )
+            raise typer.Exit(1) from None
     delete_token()
-    console.print("👋 Logged out successfully!", style="green")
+    console.print("Logged out successfully!", style="success")
 
 
 @task_app.command("create")

@@ -36,3 +36,16 @@ def client(tmp_path) -> Iterator[TestClient]:
     finally:
         app.dependency_overrides.clear()
         asyncio.run(engine.dispose())
+
+
+@pytest.fixture(autouse=True)
+def isolate_auth_services(monkeypatch):
+    from unittest.mock import Mock
+
+    from backend.core import mail, rate_limit
+
+    monkeypatch.setattr(rate_limit, "limiter", rate_limit.MemoryRateLimiter())
+    mailbox = Mock()
+    monkeypatch.setattr(mail, "mailer", mailbox)
+    monkeypatch.setenv("FLUNKY_TOKEN_STORAGE", "file")
+    return mailbox

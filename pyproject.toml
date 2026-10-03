@@ -22,9 +22,6 @@ dependencies = [
   "python-dotenv>=1,<2",
   "python-multipart>=0.0.22",
   "email-validator>=2,<3",
-  "passlib[bcrypt]>=1.7.4,<2",
-  "bcrypt>=4.0,<4.1",
-  "python-jose[cryptography]>=3.5,<4",
   "aiosqlite>=0.20",
   "asyncpg>=0.30",
   "alembic>=1.14",
@@ -33,11 +30,29 @@ dependencies = [
   "gunicorn>=23 ; sys_platform != 'win32'",
   "sentry-sdk[fastapi]>=2",
   "uvicorn-worker>=0.3 ; sys_platform != 'win32'",
+  "pwdlib[argon2,bcrypt]>=0.3,<1",
+  "pyjwt>=2.10,<3",
+  "keyring>=25,<27",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10", "pytest-cov>=6", "pytest-asyncio>=1", "pytest-xdist>=3", "respx>=0.22", "syrupy>=4,<5", "hypothesis>=6"]
-dev = ["ruff>=0.15", "mypy>=1.15", "pre-commit>=4", "build>=1", "types-passlib", "types-python-jose", "pip-audit>=2", "vulture>=2"]
+test = [
+    "pytest>=9.0.3,<10",
+    "pytest-cov>=6",
+    "pytest-asyncio>=1",
+    "pytest-xdist>=3",
+    "respx>=0.22",
+    "syrupy>=5,<6",
+    "hypothesis>=6",
+]
+dev = [
+    "ruff>=0.15",
+    "mypy>=1.15",
+    "pre-commit>=4",
+    "build>=1",
+    "pip-audit>=2",
+    "vulture>=2",
+]
 
 [project.scripts]
 flunky = "cli.main:app"
@@ -52,6 +67,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["cli", "backend"]
+concurrency = ["thread", "greenlet"]
 omit = ["cli/templates/*"]
 
 [tool.coverage.report]
@@ -64,13 +80,10 @@ strict = true
 files = ["cli", "backend"]
 
 [[tool.mypy.overrides]]
-module = ["cli.main", "cli.config", "cli.services.*", "backend.Auth"]
+module = ["cli.main", "cli.services.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 check_untyped_defs = false
 warn_return_any = false
 
-[[tool.mypy.overrides]]
-module = ["backend.Auth"]
-disallow_any_generics = false

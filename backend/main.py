@@ -58,6 +58,7 @@ async def request_context(
             status_code=500,
         )
     response.headers["X-Request-ID"] = request_id
+    response.headers["Cache-Control"] = "no-store"
     structlog.get_logger().info(
         "request", method=request.method, path=request.url.path, status=response.status_code
     )

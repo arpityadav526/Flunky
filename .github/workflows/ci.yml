@@ -20,7 +20,7 @@ jobs:
       - run: uv run ruff check cli backend tests
       - run: uv run ruff format --check cli backend tests
       - run: uv run mypy
-      - run: uv run pytest --cov=cli --cov=backend --cov-report=xml --cov-fail-under=90
+      - run: uv run python -m pytest --cov=cli --cov=backend --cov-report=xml --cov-fail-under=90
       - run: uv build
       - run: uv venv --seed .install-check
       - shell: bash
@@ -40,3 +40,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t flunky:ci .
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13'
+      - run: uv sync --locked --extra dev
+      - run: uv run pip-audit --skip-editable

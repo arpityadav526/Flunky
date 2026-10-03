@@ -11,13 +11,6 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=1024)
     email: EmailStr
 
-    @field_validator("password")
-    @classmethod
-    def validate_password_length(cls, value: str) -> str:
-        if len(value.encode("utf-8")) > 72:
-            raise ValueError("Password must be 72 bytes or fewer for bcrypt.")
-        return value
-
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -82,4 +75,40 @@ class BulkTasks(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
+    refresh_token: str | None = None
+    expires_in: int = 900
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=20, max_length=1024)
+
+
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+class ActionRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=1024)
+
+
+class ResetRequest(ActionRequest):
+    password: str = Field(min_length=8, max_length=1024)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(max_length=1024)
+    new_password: str = Field(min_length=8, max_length=1024)
+
+
+class AccountDelete(BaseModel):
+    password: str = Field(max_length=1024)
+
+
+class PATRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    expires_days: int = Field(default=30, ge=1, le=365)
+
+
+class DevicePoll(BaseModel):
+    device_code: str = Field(min_length=20, max_length=1024)

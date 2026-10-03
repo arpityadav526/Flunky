@@ -14,3 +14,13 @@ Set `ENVIRONMENT=production` and a random `SECRET_KEY` of at least 32 characters
 Docker Compose uses PostgreSQL 16, a one-shot migration service, and a non-root API. Set SECRET_KEY and POSTGRES_PASSWORD in your shell or local .env, then run `docker compose up --build`. Do not commit credentials. If a password contains URL-reserved characters, supply an encoded DATABASE_URL in your deployment configuration. The database is not exposed on a host port.
 
 Implementation references: [SQLAlchemy async sessions](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html), [Alembic async migration recipe](https://alembic.sqlalchemy.org/en/latest/cookbook.html#using-asyncio-with-alembic).
+
+## Authentication
+
+Apply migration 0003 before starting the new API. Old stateless JWTs no longer authenticate; sign in again. Successful legacy bcrypt logins rehash the password with Argon2id. Access tokens expire after 15 minutes by default. Refresh tokens rotate on every use; replay revokes the whole session family. `flunky logout --everywhere` revokes all sessions and PATs. PAT creation requires email verification.
+
+`flunky login` starts browser approval; `flunky login --with-password --username alice --password-stdin` reads a script password without exposing it as a process argument. Credentials use the OS keychain. If unavailable, a warning identifies private-file fallback. `FLUNKY_TOKEN_STORAGE=file` explicitly selects fallback; `FLUNKY_CONFIG_DIR` isolates scripted environments. Tokens are scoped to the configured API URL. Expiring access tokens refresh automatically.
+
+Dev email goes to private JSON messages under the platform data directory's mailbox (override `FLUNKY_MAILBOX_DIR`). Console logs contain only the filename. The `Mailer` interface needs a production delivery adapter before public email flows are enabled. The in-memory rate limiter is per process; supply a shared adapter for distributed enforcement. Neither production integration is claimed complete.
+
+Account endpoints under `/v1/auth`: `verify-email`, `resend-verification`, `password-reset`, `password-reset/confirm`, `change-password`, `account`, `tokens`, `logout`, `refresh`, `me`. OpenAPI documents request bodies. Password changes/reset revoke existing sessions and outstanding reset tokens. Account deletion requires the current password.

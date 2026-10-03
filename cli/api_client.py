@@ -12,6 +12,10 @@ TIMEOUT = httpx.Timeout(10.0, connect=3.0)
 class APIError(Exception):
     """A safe, actionable error returned to a CLI command."""
 
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
 
 def get_auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token.strip()}"}
@@ -54,7 +58,7 @@ def _request(
                     detail = str(body.get("detail", detail))
             except ValueError:
                 pass
-        raise APIError(detail)
+        raise APIError(detail, response.status_code)
     if response.status_code == 204 or not response.content:
         return None
     try:

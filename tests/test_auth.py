@@ -75,7 +75,7 @@ def test_login_invalid_password(client):
 def test_invalid_expired_and_missing_subject(client):
     from datetime import datetime, timedelta, timezone
 
-    from jose import jwt
+    import jwt
 
     from backend.config import ALGORITHM, SECRET_KEY
 
@@ -96,8 +96,8 @@ def test_invalid_expired_and_missing_subject(client):
         assert client.get("/tasks", headers={"Authorization": f"Bearer {token}"}).status_code == 401
 
 
-def test_password_byte_limit(client):
+def test_argon2_accepts_long_password(client):
     response = client.post(
         "/register", json={"username": "long", "email": "long@test.com", "password": "🦋" * 20}
     )
-    assert response.status_code == 422
+    assert response.status_code == 201

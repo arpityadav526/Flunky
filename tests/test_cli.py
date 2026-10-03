@@ -124,7 +124,9 @@ def test_auth_commands(command, success, prompts, respx_mock):
     respx_mock.post(f"{BASE}/{command}").respond(
         200 if success else 400, json=payload if success else {"detail": "invalid credentials"}
     )
-    result = runner.invoke(main.app, [command])
+    result = runner.invoke(
+        main.app, [command, *(["--with-password"] if command == "login" else [])]
+    )
     assert result.exit_code == (0 if success else 1), result.output
     assert ("successful" in result.output) == success
 
@@ -142,10 +144,16 @@ def test_auth_commands(command, success, prompts, respx_mock):
 )
 def test_auth_cancel(command, answers, prompts):
     prompts(*answers)
-    assert runner.invoke(main.app, [command]).exit_code == 0
+    assert (
+        runner.invoke(
+            main.app, [command, *(["--with-password"] if command == "login" else [])]
+        ).exit_code
+        == 0
+    )
 
 
-def test_logout():
+def test_logout(respx_mock):
+    respx_mock.post(f"{BASE}/v1/auth/logout").respond(204)
     assert "not logged in" in runner.invoke(main.app, ["logout"]).output
     config.save_token("token")
     assert "Logged out" in runner.invoke(main.app, ["logout"]).output

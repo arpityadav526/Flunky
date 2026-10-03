@@ -27,3 +27,12 @@
 - `docker build -t flunky:m2 .`: passed on arm64. Image inspect reports 104,965,602 bytes and user flunky.
 - Live isolated Docker network: PostgreSQL 16 + Alembic + two-worker Gunicorn API; readiness, registration/login, SQL JSON tag/priority filter, soft delete and restore passed. Temporary containers, network and anonymous DB volume removed after verification.
 - Local user database was not migrated or modified; upgrade procedure is documented in BACKEND.md.
+
+## M3 — authentication hardening
+
+- Ruff lint/format and mypy: passed (33 modules, strict for migrated auth/config).
+- Full suite: 94 passed, 96.33% coverage; three snapshots passed.
+- Security tests: Argon2id + bcrypt upgrade, refresh rotation/replay family revocation, access expiry/wrong audience/issuer/purpose, logout/everywhere, one-use verification/reset, password change/account deletion, PAT creation/revocation, brute-force lockout, device pending/slow-down/approval/consumption, keychain and 0600 fallback, automatic CLI refresh.
+- `uv run python scripts/verify_live.py`: passed against a real isolated migrated SQLite/uvicorn server with real password-stdin CLI login, task commands and logout; old access and refresh tokens both rejected afterwards.
+- `uv run pip-audit --skip-editable`: no known vulnerabilities after upgrading pytest/syrupy.
+- Development mail and keychain adapters tested without sending external email or touching the user's real credentials. Production mail/shared rate-limit adapters remain deployment prerequisites.

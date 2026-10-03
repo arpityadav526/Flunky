@@ -1,65 +1,60 @@
-from datetime import datetime, timedelta, timezone
+"""Compatibility entry points backed by revocable sessions."""
 
-from fastapi import Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from backend.core.security import (
+    aware,
+    decode_access_token,
+    digest,
+    utcnow,
+)
+from backend.core.security import (
+    create_access_token as create_access_token,
+)
+from backend.core.security import (
+    hash_password as hash_password,
+)
+from backend.core.security import (
+    verify_password as verify_password,
+)
 from backend.database import get_db
-from backend.models import User
+from backend.models import AuthSession, User
+from backend.services.auth import unauthenticated
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def verify_password(password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(password, hashed_password)
-
-
-def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire_time = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire_time})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def verify_token(token_str: str) -> str:
-    try:
-        payload = jwt.decode(token_str, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        return username
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/login")
 
 
 async def get_current_user(
-    token_str: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+    request: Request,
+    token_str: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    username = verify_token(token_str)
-    user = await db.scalar(select(User).where(User.username == username))
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+    if token_str.startswith("flunky_pat_"):
+        session = await db.scalar(
+            select(AuthSession).where(
+                AuthSession.token_hash == digest(token_str), AuthSession.kind == "pat"
+            )
         )
-
+    else:
+        payload = decode_access_token(token_str)
+        session = await db.get(AuthSession, str(payload["sid"]))
+    if session is None or session.revoked or aware(session.expires_at) <= utcnow():
+        raise unauthenticated()
+    user = await db.get(User, session.user_id)
+    if user is None:
+        raise unauthenticated()
+    request.state.auth_session = session
     return user
+
+
+def verify_token(token_str: str) -> str:
+    payload = decode_access_token(token_str)
+    subject = payload.get("sub")
+    if not isinstance(subject, str):
+        raise HTTPException(401, "Invalid credentials")
+    return subject

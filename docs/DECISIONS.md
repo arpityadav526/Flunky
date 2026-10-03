@@ -12,3 +12,10 @@
 - M2: Use dialect-specific SQL JSON table functions for exact tag filtering before pagination; keep SQLite and PostgreSQL results consistent.
 - M2: Keep historical migrations immutable and test legacy data preservation; existing DBs require a backup and baseline stamp before upgrade.
 - M2: Omit subtasks to keep the task model small; use gunicorn with the maintained uvicorn-worker package in Docker.
+- M3: Upgrade legacy bcrypt hashes to Argon2id on successful login; legacy stateless JWTs require a fresh login after the session migration.
+- M3: Store only SHA-256 digests of high-entropy refresh/PAT/action/device secrets; conditionally consume refresh tokens in SQL, revoking their whole family on reuse.
+- M3: Email verification is available immediately; require it for PAT creation while allowing local task use before verification.
+- M3: Development email writes a 0600 mailbox file and logs only its path; no raw credential tokens in logs. Production email delivery remains behind a Mailer interface.
+- M3: Memory rate limiting is process-local and implements an adapter protocol for a shared Redis implementation; production multi-instance deployments need that adapter.
+- M3: Configure coverage for both thread and greenlet concurrency, as required for accurate async SQLAlchemy measurement (https://coverage.readthedocs.io/en/latest/config.html#run-concurrency).
+- M3: Upgrade pytest and syrupy together after pip-audit found PYSEC-2026-1845 in pytest 8.4.2.
