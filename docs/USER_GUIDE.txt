@@ -1,0 +1,1807 @@
+FLUNKY - COMPLETE SETUP AND COMMAND GUIDE
+=======================================
+For the current repository version: 0.1.0
+Prepared: 2026-10-03
+
+This guide covers local installation, backend startup, every CLI command,
+generated projects, Docker, verification, and troubleshooting. A complete
+option-by-option help reference is included at the end.
+
+Commands are examples, not one giant script. Run the sections you need.
+Replace example usernames, paths, domains and task IDs with your own values.
+Do not type the terminal prompt symbol; none is included in these examples.
+
+CONTENTS
+--------
+1. What runs where
+2. Prerequisites and installation
+3. First run: two terminals on macOS
+4. Starting again later / stopping
+5. Windows PowerShell setup
+6. Help, version, dashboard and global flags
+7. Registration, login and logout
+8. Quick task commands
+9. Offline work and sync
+10. Full-screen TUI
+11. Legacy task commands
+12. Project generator: all stacks, layouts and options
+13. Running generated projects
+14. Apply standards to an existing folder
+15. Saved project shortcuts
+16. Settings, profiles and environment variables
+17. Shell completion
+18. Diagnostics and troubleshooting
+19. Docker and PostgreSQL
+20. Backend API and account features
+21. Developer checks, docs and packaging
+22. Current limitations
+23. Complete built-in command help
+
+
+1. WHAT RUNS WHERE
+-----------------
+Flunky has two parts:
+
+  CLI: the flunky command in your terminal.
+  API: a FastAPI server that stores accounts and tasks.
+
+Project generation, structure apply, project shortcuts, configuration,
+completion and help work without starting the API.
+
+Registration/login need the API. Task commands normally use it. The newer
+quick task commands can use cached data and queue changes while offline after
+you have signed in. The legacy 'task' group requires a reachable API.
+
+Generated projects are separate applications. Starting the Flunky API does
+not start a generated website, mobile app or other project.
+
+
+2. PREREQUISITES AND INSTALLATION
+--------------------------------
+Use Python 3.10-3.13 and uv. This checkout was tested on those four Python
+versions on Apple Silicon. Check what is installed:
+
+  python3 --version
+  uv --version
+  git --version
+
+On Windows, use 'python --version' or 'py --version' instead of python3.
+If uv is missing, install uv first using its official installation instructions:
+https://docs.astral.sh/uv/getting-started/installation/
+
+For optional features:
+  Docker Desktop: Docker/Postgres backend.
+  Node.js 22.13 or newer in the Node 22 line, plus npm: JavaScript stacks.
+  Flutter SDK: Flutter projects.
+  Git with an author identity: generator --git option.
+  VS Code's 'code' command on PATH: generator --open option.
+
+Go to this checkout on your Mac:
+
+  cd /Users/arpityadav526/Desktop/Flunky
+
+Install the repository environment:
+
+  uv sync --locked --extra dev --extra test
+
+Install the CLI as an isolated tool, usable outside the repository:
+
+  uv tool install .
+  flunky --version
+  flunky --help
+
+If an older Flunky tool installation already exists, reinstall this checkout:
+
+  uv tool install --force .
+
+If 'flunky' is not on PATH:
+
+  uv tool update-shell
+
+Open a new terminal afterwards. Inside the repository you can also run:
+
+  uv run python -m cli.main --help
+  uv run python -m cli.main list
+
+Use 'flunky' for the fast installed launcher; the module invocation is a
+source-development fallback. No venv activation is needed with uv.
+
+Alternative to uv tool installation, if pipx is already installed:
+
+  pipx install .
+
+Choose one tool-installation method. Public PyPI installation has not yet
+been verified as this release; use this checkout rather than assuming a
+same-named public package is the correct one.
+
+
+3. FIRST RUN: TWO TERMINALS ON MACOS
+----------------------------------
+Terminal 1 runs the API. Keep it open.
+
+  cd /Users/arpityadav526/Desktop/Flunky
+  export DATABASE_URL="sqlite+aiosqlite:///./flunky-guide.db"
+  uv run alembic upgrade head
+  uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+The guide uses flunky-guide.db as a separate local demo database. It does not
+modify the existing flunky.db. Use the same DATABASE_URL each time you want
+the same accounts and tasks. Relative database paths are relative to the
+repository directory where you launch the API.
+
+Optional: add --reload to uvicorn while actively developing backend code.
+
+Open these URLs in a browser:
+
+  http://localhost:8000/health
+  http://localhost:8000/ready
+  http://localhost:8000/docs
+
+Health should say 'ok'; readiness should say 'ready'. /docs is the interactive
+API reference. If readiness fails, apply migrations before continuing.
+
+Terminal 2 runs your CLI commands:
+
+  flunky config profile local
+  flunky config set api_url http://localhost:8000
+  flunky doctor
+  flunky register
+  flunky login
+
+Registration asks for a username, email address, password and confirmation.
+Use a username with 3-50 letters/numbers/underscores/hyphens and a password
+with at least 8 characters.
+
+Login displays an approval URL and a code. Open the URL if the browser does
+not open automatically, enter the code and your account credentials, and
+approve. Leave the CLI running until it reports successful login.
+
+Try your first task:
+
+  flunky add "Try Flunky" -p high -d tomorrow -t onboarding
+  flunky list
+  flunky upcoming
+
+Read the ID printed by add/list. In these examples, 1 is only an example ID:
+
+  flunky show 1
+  flunky done 1
+  flunky undo
+  flunky tui
+
+Press q from the task list to quit the TUI.
+
+If FLUNKY_API_URL was set in your shell previously, it overrides saved
+configuration. To use the saved profile on macOS/Linux:
+
+  unset FLUNKY_API_URL
+
+
+4. STARTING AGAIN LATER / STOPPING
+---------------------------------
+For later sessions, start Terminal 1 with the same database:
+
+  cd /Users/arpityadav526/Desktop/Flunky
+  export DATABASE_URL="sqlite+aiosqlite:///./flunky-guide.db"
+  uv run alembic upgrade head
+  uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+In Terminal 2:
+
+  flunky
+  flunky doctor
+  flunky list
+
+You normally do not need to register again. Sign in again if the session has
+expired or been revoked. Ctrl+C in Terminal 1 stops the API without deleting
+the database. Closing the CLI does not stop the API in Terminal 1.
+
+Existing legacy database warning:
+Do not blindly stamp or recreate your existing flunky.db. If it has users/tasks
+but no Alembic version table, stop the API, back up the DB and verify that its
+schema matches migration 0001 before using 'alembic stamp 0001', followed by
+'alembic upgrade head'. See docs/BACKEND.md. Never stamp a blank database.
+
+
+5. WINDOWS POWERSHELL SETUP
+--------------------------
+These are PowerShell commands; replace the checkout path:
+
+  Set-Location 'C:\path\to\Flunky'
+  uv sync --locked --extra dev --extra test
+  uv tool install .
+  $env:DATABASE_URL = 'sqlite+aiosqlite:///./flunky-guide.db'
+  uv run alembic upgrade head
+  uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+In a second PowerShell window:
+
+  flunky config profile local
+  flunky config set api_url http://localhost:8000
+  flunky register
+  flunky login
+  flunky list
+
+Unset an overriding API URL with:
+
+  Remove-Item Env:FLUNKY_API_URL -ErrorAction SilentlyContinue
+
+The CLI command examples in this guide also apply in PowerShell. Use the
+PowerShell $env:NAME syntax instead of 'export NAME=...'. For cmd.exe, use:
+
+  set DATABASE_URL=sqlite+aiosqlite:///./flunky-guide.db
+
+Hosted Windows verification remains a release gate; do not interpret these
+setup instructions as a claim that the Windows CI jobs have already run.
+
+
+6. HELP, VERSION, DASHBOARD AND GLOBAL FLAGS
+-------------------------------------------
+  flunky                         Show auth status and task dashboard.
+  flunky --help                  Show root help.
+  flunky --version               Show installed version.
+  flunky add --help              Show command-specific options.
+  flunky task update --help      Show a nested command's options.
+
+Global flags, usable before or after commands:
+
+  --json       Machine-readable output; useful for scripts.
+  --quiet      Suppress normal output.
+  --no-color   Disable terminal colors.
+  --yes        Accept supported confirmations; does not fill required fields.
+  --debug      Show detailed errors/tracebacks for debugging.
+  --help       Show usage instead of executing a command.
+
+Examples:
+
+  flunky list --json
+  flunky --json show 1
+  flunky list --no-color
+  flunky done 1 --quiet
+  flunky rm 1 --yes
+  flunky doctor --debug
+
+JSON commands return different shapes: list returns an object with a tasks
+array; show/add return task data. Do not assume every command returns the same
+schema. Help output is intended for people.
+
+For literal negative IDs, put global flags before '--':
+
+  flunky --json show -- -1
+
+Normal success usually exits 0; failures exit nonzero. Check the exit code
+rather than searching for a success word in output.
+
+macOS/zsh/bash: echo $?
+PowerShell:    $LASTEXITCODE
+
+Interactive prompts require a real terminal. In scripts, pass all required
+values explicitly. --yes does not make the TUI non-interactive.
+
+
+7. REGISTRATION, LOGIN AND LOGOUT
+--------------------------------
+Interactive registration:
+
+  flunky register
+  flunky register --username alice --email alice@example.com
+
+Browser/device login (default):
+
+  flunky login
+
+Interactive password login:
+
+  flunky login --with-password --username alice
+
+Scripted password input (password is read from stdin, not a command argument):
+
+  flunky register -u alice --email alice@example.com --password-stdin
+  flunky login --with-password -u alice --password-stdin
+
+For those stdin forms, pipe the password from your secret manager or a protected
+input source. Do not paste a real password into a shell command/history. For
+normal manual use, use the interactive forms above.
+
+Logout of this session:
+
+  flunky logout
+
+Revoke all sessions and automation tokens for your account:
+
+  flunky logout --everywhere
+
+Logout needs the server to revoke the session. On connection failure, local
+credentials are retained so you can retry. Access tokens refresh automatically
+while a valid refresh session remains. Never share stored token files.
+
+Use ordinary 'flunky login' without --json/--quiet for browser approval, so you
+can see the approval URL and code while it waits. Scripts should prefer the
+password-stdin flow.
+
+
+8. QUICK TASK COMMANDS
+---------------------
+CREATE
+
+  flunky add "Fix login bug"
+  flunky add "Fix login bug" -p high -d tomorrow -t backend
+  flunky add "Ship release" --priority high --due "in 3 days" --tag release --tag cli --notes "Run verification first"
+
+Priority: low, medium, high. Default: medium.
+-d/--due accepts natural-language dates or YYYY-MM-DD.
+-t/--tag may be repeated. Quote multiword values.
+
+LIST AND FILTER
+
+  flunky list
+  flunky list --completed false
+  flunky list --completed true
+  flunky list -p high
+  flunky list -t backend
+  flunky list -s login
+  flunky list --search login --priority high --completed false
+  flunky list --sort title
+  flunky list --sort=-created_at
+  flunky list --sort due_date --limit 20 --offset 0
+  flunky list --limit 20 --offset 20
+  flunky list --due-after today --due-before "in 7 days"
+
+Sort fields: created_at, updated_at, title, priority, due_date.
+Prefix a sort field with '-' for descending order.
+Limit: 1-100 (default 50); offset starts at 0.
+Use today/upcoming for common date views:
+
+  flunky today
+  flunky upcoming
+
+SHOW / COMPLETE
+
+  flunky show 1
+  flunky done 1
+
+Omit an ID in an interactive terminal to choose a task:
+
+  flunky show
+  flunky done
+
+EDIT
+
+  flunky edit 1 --title "Fix login redirect"
+  flunky edit 1 -p low
+  flunky edit 1 -d tomorrow
+  flunky edit 1 --notes "Waiting for review"
+  flunky edit 1 -t frontend -t urgent
+  flunky edit --title "Rename selected task"
+
+Supply at least one field. Supplying tags replaces the task's tag list rather
+than appending to it. The current quick-edit flags do not expose clearing a
+due date or notes to JSON null; use the documented API if you need that.
+
+DELETE / UNDO
+
+  flunky rm 1
+  flunky rm 1 --yes
+  flunky rm 1 --force
+  flunky undo
+
+rm soft-deletes; undo restores the most recent recorded quick-command edit,
+completion or deletion for the current account. Undo is not an undo-create
+command and does not track changes made through the legacy task group.
+
+After deleting via the legacy/API path, use the API restore endpoint if the
+change is not in the quick-command undo history.
+
+
+9. OFFLINE WORK AND SYNC
+-----------------------
+Sign in and load your tasks while the API is available:
+
+  flunky login
+  flunky list
+
+If the server later becomes unavailable, quick commands can read cached tasks
+and queue changes:
+
+  flunky add "Write notes while offline"
+  flunky list
+
+Offline-created tasks have negative temporary IDs, for example -1:
+
+  flunky show -- -1
+  flunky edit --title "Updated offline note" -- -1
+  flunky done -- -1
+  flunky --json show -- -1
+
+'--' ends option parsing. It lets the negative ID be treated as an argument.
+
+After starting the same backend and selecting the same account/API URL:
+
+  flunky sync
+  flunky list
+
+Sync assigns server IDs to queued new tasks. Read the fresh list instead of
+continuing to assume a negative ID is the permanent ID. Run one sync process
+at a time. Queued changes are preserved on a failed sync. Permission/auth
+errors are not treated as successful offline work.
+
+Offline cache/outbox data is isolated by account and API URL. Switching the
+server URL is not a way to synchronize another server's queue.
+
+
+10. FULL-SCREEN TUI
+------------------
+  flunky tui
+
+Use an interactive terminal, not a pipe and not --json.
+
+Keys:
+  Arrow keys / mouse   Select tasks.
+  d                    Complete the selected task.
+  u                    Undo the last tracked change.
+  r                    Refresh.
+  /                    Focus search.
+  Escape               Return from search to the task list.
+  q                    Quit from the task list.
+
+While typing in search, letters such as q are search text. Press Escape first
+if you want q to quit. The detail pane shows task notes/description.
+
+
+11. LEGACY TASK COMMANDS
+-----------------------
+These public commands remain available. Prefer the quick commands for offline
+support, metadata and undo.
+
+  flunky task create
+  flunky task create -t "Legacy example" -d "Description"
+  flunky task list
+  flunky task list --completed
+  flunky task show 1
+  flunky task update 1 --title "New title"
+  flunky task update 1 --description "New description"
+  flunky task update 1 --completed
+  flunky task update 1
+  flunky task complete 1
+  flunky task delete 1
+  flunky task delete 1 --force
+
+With no update fields, task update asks interactive questions.
+For non-interactive task create, provide both title and description; use -d ""
+if you want an empty description without a prompt.
+
+Important difference:
+  flunky list --completed false   Uses an explicit true/false value.
+  flunky task list --completed    Legacy boolean flag; no 'true' argument.
+
+
+12. PROJECT GENERATOR
+---------------------
+No Flunky API or login is required.
+
+Run the wizard:
+
+  flunky init
+
+Or supply the name and options:
+
+  flunky init my-app --stack fastapi --yes
+
+Projects are created under the current directory. NAME is a simple project
+name, not a filesystem path. First cd to the desired parent directory.
+Use 1-63 letters, numbers, underscores or hyphens; Windows reserved names are
+rejected. Use lowercase hyphenated names for the broadest ecosystem compatibility.
+
+ALL TEN STACKS (run only the ones you want):
+
+  flunky init python-demo --stack python --yes
+  flunky init cli-demo --stack cli --yes
+  flunky init api-demo --stack fastapi --yes
+  flunky init data-demo --stack ds --yes
+  flunky init web-demo --stack nextjs --yes
+  flunky init mern-demo --stack mern --yes
+  flunky init nest-demo --stack nestjs --yes
+  flunky init desktop-demo --stack electron --yes
+  flunky init mobile-demo --stack react-native --yes
+  flunky init flutter-demo --stack flutter --yes
+
+LAYOUTS:
+
+  flunky init single-demo --stack python --type app --yes
+  flunky init full-demo --stack fastapi --type fullstack --yes
+  flunky init mono-demo --stack nextjs --type monorepo --yes
+  flunky init lib-demo --stack python --type library --yes
+  flunky init tool-demo --stack python --type cli --yes
+
+app:       Selected stack at the root. single-app is an accepted alias.
+fullstack: frontend/ and backend/; composes selected stack with Next.js/FastAPI.
+monorepo:  apps/main/ plus packages/shared/.
+library:   Selected stack under packages/PROJECT-NAME/.
+cli:       Python CLI at root, with a non-CLI selected stack under apps/main/.
+
+Library layout is organizational; it does not turn every application framework
+into a fully publishable library automatically.
+
+ADD-ONS AND LICENSE:
+
+  flunky init full-demo --stack fastapi --type fullstack --addons docker,ci,database,docs-site --license MIT --yes
+
+Use an unused name for a new project. Supported add-ons:
+  docker, ci, database, auth, linting, docs-site, testing, monorepo
+
+CI, linting and tests are already in the baseline.
+docker/database add a Postgres Compose service, not automatic app DB wiring.
+docs-site adds MkDocs Material configuration.
+auth supplies integration guidance; it DOES NOT enable authentication.
+
+License choices:
+  --license MIT
+  --license UNLICENSED
+
+PREVIEW WITHOUT WRITING:
+
+  flunky init preview-app --stack nextjs --dry-run
+  flunky init preview-app --stack nextjs --dry-run --json
+
+OPTIONAL ACTIONS:
+
+  flunky init installed-app --stack fastapi --install --yes
+  flunky init git-app --stack python --git --yes
+  flunky init editor-app --stack python --open --yes
+  flunky init all-options --stack fastapi --install --git --open --yes
+
+--install runs dependency installation; the stack's tool must be installed.
+--git initializes Git and makes an initial commit; configure your own Git
+author identity if Git asks for it.
+--open invokes the VS Code 'code' command.
+Install hooks require a fresh target. Errors preserve the generated files so
+you can inspect them and run a failed step manually.
+
+Existing content is never silently overwritten. --yes permits adding missing
+files to a nonempty target, but existing files are still preserved.
+
+CUSTOM TEMPLATES:
+Place a versioned manifest.json and Jinja files under:
+  <Flunky config directory>/templates/TEMPLATE-NAME/
+
+  flunky init custom-demo --stack TEMPLATE-NAME --dry-run
+  flunky init custom-demo --stack TEMPLATE-NAME --yes
+  flunky init trusted-demo --stack TEMPLATE-NAME --install --trust-template --yes
+
+Inspect custom templates before explicitly trusting installation hooks.
+--yes alone does not authorize a third-party template's hooks.
+See docs/BLUEPRINTS.md and bundled manifests for the complete schema.
+
+DEPRECATED ALIAS (still works):
+
+  flunky init create fastapi legacy-api
+
+Prefer 'flunky init legacy-api --stack fastapi'. Do not combine the deprecated
+form with modern layout/install options; the compatibility form uses its
+original simple-generation behavior.
+
+
+13. RUNNING GENERATED PROJECTS
+-----------------------------
+First cd into the generated app directory. For a fullstack project, use
+backend/ or frontend/ separately. For monorepo use apps/main/; for library use
+packages/PROJECT-NAME/. The root README lists the specific next steps.
+
+Every generated root has a portable sanity check:
+
+  python scripts/check.py
+
+Use python3 instead of python on systems without a python alias.
+
+PYTHON / CLI:
+
+  cd python-demo
+  uv sync --extra dev
+  uv run pytest
+  uv run ruff check .
+  uv run python main.py
+
+For cli-demo the same commands apply. Try:
+
+  uv run python main.py --help
+
+Python package module names are 'project_' plus the lowercased project name
+with hyphens changed to underscores. For python-demo that is
+project_python_demo. The generated pyproject.toml lists its console entry.
+
+FASTAPI:
+
+  cd api-demo
+  uv sync --extra dev
+  uv run pytest
+  uv run uvicorn main:app --reload --port 8001
+
+Open http://localhost:8001/health and http://localhost:8001/docs.
+Use 8001 so the generated API does not conflict with Flunky's own API on 8000.
+
+DATA SCIENCE:
+
+  cd data-demo
+  uv sync --extra dev
+  uv run pytest
+  uv run ruff check .
+  uv run jupyter lab
+
+Open notebooks/exploration.ipynb in Jupyter. Follow the browser URL printed by
+Jupyter; do not publish its session token.
+
+NEXT.JS:
+
+  cd web-demo
+  npm install
+  npm test
+  npm run lint
+  npm run dev
+
+Open the local URL printed by Next.js. For a production-mode build:
+
+  npm run build
+  npm start
+
+MERN:
+
+  cd mern-demo
+  npm install
+  npm test
+  npm run lint
+  npm run typecheck
+
+In one terminal in that directory:
+
+  npm run dev:api
+
+In another terminal in the same directory:
+
+  npm run dev
+
+The Vite frontend prints its URL; its /health proxy targets port 3000.
+For the built frontend served by Express:
+
+  npm run build
+  npm start
+
+Set MONGODB_URI when integrating the provided database helper. MongoDB is not
+started or wired into application routes automatically by the generator.
+
+NESTJS:
+
+  cd nest-demo
+  npm install
+  npm test
+  npm run lint
+  npm run build
+  npm start
+
+Health endpoint: http://localhost:3000/health.
+'npm run dev' watches TypeScript compilation; it does not itself restart the
+server process. Restart npm start after rebuilding when needed.
+
+ELECTRON:
+
+  cd desktop-demo
+  npm install
+  npm test
+  npm run lint
+  npm run build
+  npm start
+
+This opens a desktop window in a graphical desktop session. The build command
+copies runtime sources; it does not create a signed OS installer.
+
+EXPO / REACT NATIVE:
+
+  cd mobile-demo
+  npm install
+  npm test
+  npm run lint
+  npm run build
+  npm start
+
+npm start runs the Expo development server. Follow its printed device/emulator
+instructions. Here, npm run build checks TypeScript; it does not produce an
+APK, IPA or store-ready build. Native SDKs/signing require separate setup.
+The current Expo dependency audit has unresolved advisories; see limitations.
+
+FLUTTER:
+
+  cd flutter-demo
+  flutter create --project-name project_flutter_demo --platforms=android,ios,web .
+  flutter pub get
+  flutter analyze
+  flutter test
+  flutter run
+
+The explicit project name matches the generated Dart package for flutter-demo.
+For a different project name, read the name in pubspec.yaml and use that value.
+Review Flutter SDK-generated files before committing. Platform SDKs, connected
+devices/emulators and signing are separate requirements.
+
+GENERATED DOCS-SITE ADD-ON:
+In the generated root, create a separate docs environment if desired:
+
+  uv venv .docs-venv
+  uv pip install --python .docs-venv/bin/python -r docs/requirements.txt
+  .docs-venv/bin/mkdocs serve
+
+Windows equivalents use .docs-venv\Scripts\python.exe and mkdocs.exe.
+Do not commit the docs virtual environment; add .docs-venv/ to .gitignore if used.
+
+
+14. APPLY STANDARDS TO AN EXISTING FOLDER
+---------------------------------------
+  flunky structure apply /path/to/existing-project --dry-run
+  flunky structure apply /path/to/existing-project
+  flunky structure apply /path/to/existing-project --yes
+  flunky structure apply . --dry-run --json
+
+The folder must exist. The command adds missing standard files, displays diffs
+for conflicting files and keeps existing content. --yes skips the keep/continue
+questions; it does not authorize replacing your files. This is additive
+standardization, not an automatic framework upgrade or dependency migration.
+
+
+15. SAVED PROJECT SHORTCUTS
+--------------------------
+  flunky projects add flunky /Users/arpityadav526/Desktop/Flunky
+  flunky projects add demo "/path/with spaces/demo"
+  flunky projects list
+  flunky projects list --json
+  flunky projects remove demo
+
+The path must be an existing directory. These commands manage a registry of
+names and paths. Removing an entry does not delete the project's files.
+They do not change the current shell directory; use your shell's cd command.
+
+
+16. SETTINGS, PROFILES AND ENVIRONMENT VARIABLES
+-----------------------------------------------
+  flunky config list
+  flunky config list --json
+  flunky config get api_url
+  flunky config set api_url http://localhost:8000
+  flunky config set theme auto
+  flunky config set theme dark
+  flunky config set theme light
+  flunky config set theme high-contrast
+
+Only api_url and theme are currently configurable through config set.
+
+Profiles:
+
+  flunky config profile staging
+  flunky config set api_url https://YOUR-STAGING-HOST
+  flunky config profile prod
+  flunky config set api_url https://YOUR-PRODUCTION-HOST
+  flunky config profile local
+
+The example hosts are placeholders. Configure real hosts before using those
+profiles. Staging/prod have no working URL until configured. Remote servers
+must use HTTPS; local loopback HTTP is allowed. Credentials are server-scoped;
+changing the API URL may require signing in to that server.
+
+Common environment variables:
+
+  FLUNKY_API_URL         Override the saved API URL.
+  FLUNKY_CONFIG_DIR      Override the CLI configuration directory.
+  FLUNKY_DATA_DIR        Override task cache/outbox directory.
+  FLUNKY_TOKEN_STORAGE   Set to file to explicitly use file credential storage.
+  FLUNKY_MAILBOX_DIR     Backend development email output directory.
+  NO_COLOR              Disable color when set.
+  FORCE_COLOR           Request color, unless NO_COLOR/--no-color disables it.
+  CI                    Disable interactive prompts in CI environments.
+  DATABASE_URL          Backend database URL; not a CLI API URL.
+  ENVIRONMENT           Backend dev, test or production setting.
+  SECRET_KEY            Backend signing secret; strong custom value in production.
+  SENTRY_DSN            Optional backend error reporting.
+
+Example macOS/Linux override:
+
+  export FLUNKY_API_URL="http://localhost:8000"
+  flunky doctor
+  unset FLUNKY_API_URL
+
+Example PowerShell override:
+
+  $env:FLUNKY_API_URL = 'http://localhost:8000'
+  flunky doctor
+  Remove-Item Env:FLUNKY_API_URL
+
+Config/cache locations use platformdirs. To print this environment's defaults:
+
+  uv run python -c "from platformdirs import user_config_path,user_data_path; print('Config:',user_config_path('flunky')); print('Data:',user_data_path('flunky'))"
+
+On macOS the config directory is normally under ~/Library/Application Support.
+Environment overrides take precedence. Keychain storage is preferred; a warning
+indicates restricted-file fallback. Do not publish that file or mailbox data.
+
+
+17. SHELL COMPLETION
+--------------------
+Choose your shell; do not run every installer unnecessarily:
+
+  flunky completion install zsh
+  flunky completion install bash
+  flunky completion install fish
+  flunky completion install powershell
+  flunky completion install pwsh
+
+These commands write a dedicated completion file and print its path. They do
+not edit your shell startup files. Existing files are not overwritten; choose
+another --path or review/remove the old completion file yourself.
+
+Explicit locations and activation in the current session:
+
+Zsh on macOS:
+
+  flunky completion install zsh --path "$HOME/.zfunc/_flunky"
+  fpath=("$HOME/.zfunc" $fpath)
+  autoload -Uz compinit
+  compinit
+
+For persistence, add the fpath/autoload/compinit lines to your ~/.zshrc in the
+appropriate place, avoiding duplicate initialization from your shell framework.
+
+Bash:
+
+  flunky completion install bash --path "$HOME/.config/flunky/completion.bash"
+  source "$HOME/.config/flunky/completion.bash"
+
+Fish (its normal autoload directory):
+
+  flunky completion install fish --path "$HOME/.config/fish/completions/flunky.fish"
+
+PowerShell:
+
+  flunky completion install pwsh --path "$HOME/flunky-completion.ps1"
+  . "$HOME/flunky-completion.ps1"
+
+For persistence, source the chosen file from your own shell profile. Respect
+your existing PowerShell execution policy; do not broadly disable it.
+
+Typer also exposes root --install-completion and --show-completion. Prefer the
+explicit 'completion install' command above for controlled, non-overwriting
+file creation. The built-in --install-completion helper may modify shell setup.
+
+
+18. DIAGNOSTICS AND TROUBLESHOOTING
+---------------------------------
+  flunky doctor
+  flunky doctor --json
+  flunky doctor --debug
+
+doctor checks runtime/version, backend reachability, authentication, keychain
+availability, PATH and terminal capabilities. Backend failure returns nonzero.
+
+'Can't reach ...'
+  Start the API in Terminal 1. Check the saved URL and any FLUNKY_API_URL override.
+  Open /health and /ready. Use the exact same localhost/127.0.0.1 URL consistently
+  because credentials and cache are scoped to the API URL.
+
+'Readiness not ready' / missing tables
+  Set the intended DATABASE_URL in the API shell, then run:
+    uv run alembic upgrade head
+  Current readiness expects migration revision 0004. Do not stamp unknown DBs.
+
+'Please login' / 401 / revoked session
+  Run flunky login. Confirm the intended profile/API URL is selected. Existing
+  sessions are invalidated by password resets, changes or logout everywhere.
+
+Interactive input unavailable
+  Run in a terminal, or supply flags/arguments and --password-stdin where needed.
+  --yes confirms prompts but does not supply a missing project name/password.
+
+Port already in use
+  Stop the other server, or choose another port:
+    uv run uvicorn backend.main:app --host 127.0.0.1 --port 8002
+    flunky config set api_url http://localhost:8002
+  Changing the URL means signing in to that URL again.
+
+Command not found after install
+  Run uv tool update-shell, reopen the terminal, and run flunky --version.
+  Inside this checkout, use uv run python -m cli.main as a fallback.
+
+Missing module / damaged development environment
+  Repair the repository environment:
+    uv sync --locked --extra dev --extra test --reinstall
+  Repair the separately installed CLI:
+    uv tool install --force .
+  The earlier development environment had incomplete metadata; isolated wheel
+  installs were verified separately. Do not delete application DB/config data
+  just to repair Python dependencies.
+
+Project directory already exists
+  Use --dry-run to inspect output. Choose a fresh name, or use --yes to add
+  missing files while preserving existing files. --install requires a fresh
+  target to avoid executing unexpected existing project scripts.
+
+VS Code or Git option failed
+  Check 'code --version' or 'git --version'. Configure your own Git name/email
+  if needed. Generated files remain available; retry the failed action manually.
+
+No undo available
+  Undo tracks quick-command edits/deletes/completions for this account and URL.
+  It does not undo task creation or arbitrary API/legacy commands.
+
+TUI q does not quit
+  Press Escape to leave the search field, then q.
+
+Plain/odd terminal output
+  Try --no-color or 'flunky config set theme high-contrast'. Use a UTF-8 terminal.
+
+
+19. DOCKER AND POSTGRESQL BACKEND
+--------------------------------
+This is an alternative to the SQLite/uvicorn server, not a second server to run
+on the same port. Docker Desktop must be running. The repository has compose.yaml.
+
+From the repository root, set secrets in the current shell. These macOS/Linux
+examples generate values without printing them:
+
+  export POSTGRES_PASSWORD="$(uv run python -c 'import secrets; print(secrets.token_hex(24))')"
+  export SECRET_KEY="$(uv run python -c 'import secrets; print(secrets.token_hex(32))')"
+  docker compose up --build
+
+PowerShell equivalents:
+
+  $env:POSTGRES_PASSWORD = uv run python -c "import secrets; print(secrets.token_hex(24))"
+  $env:SECRET_KEY = uv run python -c "import secrets; print(secrets.token_hex(32))"
+  docker compose up --build
+
+Securely retain the values for subsequent starts. Do not generate a new database
+password every time against an existing Postgres volume: setting an environment
+variable does not change the stored Postgres password. Keep the signing key
+stable too, unless you intend to invalidate existing JWTs.
+
+The Compose stack starts db, applies migrations using migrate, then starts api.
+The API binds to localhost:8000; Postgres is not exposed on a host port.
+
+  docker compose ps
+  docker compose logs --tail=100 api
+  docker compose logs --tail=100 migrate
+
+Then in another terminal:
+
+  flunky config profile local
+  flunky config set api_url http://localhost:8000
+  flunky doctor
+  flunky register
+  flunky login
+
+This Postgres database is separate from SQLite. Accounts/tasks from your SQLite
+file do not appear automatically in Postgres.
+
+Stop without deleting persistent database storage:
+
+  docker compose down
+
+Do not add --volumes/-v unless you deliberately intend to remove stored data.
+The development mailbox and per-process rate limiter still need production
+adapters before running an unrestricted public service.
+
+
+20. BACKEND API AND ACCOUNT FEATURES
+-----------------------------------
+Interactive reference while your API is running:
+
+  http://localhost:8000/docs
+  http://localhost:8000/openapi.json
+
+Health checks on macOS/Linux:
+
+  curl http://localhost:8000/health
+  curl http://localhost:8000/ready
+
+On Windows use curl.exe if PowerShell aliases curl to another command.
+
+The canonical routes start with /v1. The API has features that are not yet
+exposed as dedicated CLI commands: bulk task actions, explicit restoration,
+email verification/resend, password reset/change, account deletion and personal
+access token management. Use /docs for the current request schemas rather than
+inventing 'flunky auth ...' commands; that command group does not exist.
+
+Important account paths under /v1/auth:
+  me, refresh, logout, verify-email, resend-verification,
+  password-reset, password-reset/confirm, change-password, account, tokens.
+
+Task restoration route:
+  POST /v1/tasks/ID/restore
+
+Development emails are written to private JSON mailbox files; they are not
+sent to a real inbox. The server logs their file paths. To use an explicit
+mailbox location, set FLUNKY_MAILBOX_DIR in Terminal 1 before starting the API.
+Keep that directory private and outside version control. Personal access token
+creation requires email verification. Never paste tokens into public reports.
+
+
+21. DEVELOPER CHECKS, DOCS AND PACKAGING
+--------------------------------------
+Run these from the Flunky repository root (not a generated project):
+
+  uv sync --locked --extra dev --extra test --extra docs --extra release
+  uv run ruff check cli backend tests scripts packaging
+  uv run ruff format --check cli backend tests scripts packaging
+  uv run mypy
+  uv run python -m pytest -q --cov --cov-fail-under=90
+
+A full test run uses isolated test data. Useful extended checks:
+
+  uv run python -m scripts.verify_live
+  uv run python -m scripts.verify_blueprints
+
+verify_live starts/stops its own isolated backend. verify_blueprints generates
+12,800 combinations in temporary directories and can take several minutes.
+To check only one stack:
+
+  uv run python -m scripts.verify_blueprints --stack fastapi
+
+Build/install a wheel into a separate test environment (macOS/Linux):
+
+  uv build
+  uv venv --seed .install-check
+  uv pip install --python .install-check/bin/python dist/flunky-0.1.0-py3-none-any.whl
+  .install-check/bin/flunky --help
+  .install-check/bin/python scripts/check_startup.py
+  uv run python -m scripts.verify_cli_surface --cli .install-check/bin/flunky
+
+On Windows, replace .install-check/bin/python with
+.install-check\Scripts\python.exe, and flunky with
+.install-check\Scripts\flunky.exe. Adjust the wheel filename after a version bump.
+
+verify_cli_surface runs real CLI processes, creates a temporary DB/config/cache,
+starts a temporary API, and checks help, workflows and failures. It does not
+use your normal account. It checks the non-TTY rejection path for tui; use a
+real terminal for a manual TUI launch.
+
+Docker smoke:
+
+  docker build -t flunky:final .
+  uv run python -m scripts.verify_postgres
+
+This creates and cleans up its own temporary containers/network/DB volume.
+
+Documentation:
+
+  uv run python -m scripts.generate_help
+  uv run python -m scripts.generate_docs
+  uv run mkdocs build --strict
+  uv run mkdocs serve
+
+Open the local URL printed by MkDocs. Note that serve commonly uses port 8000;
+choose another address if the API is running, for example:
+
+  uv run mkdocs serve --dev-addr 127.0.0.1:8003
+
+Standalone executable (build on the target platform):
+
+  uv run python -m scripts.build_binary
+  ./dist/flunky --version
+  ./dist/flunky --help
+
+On Windows the output is dist\flunky.exe. macOS binaries from this local build
+are ad-hoc signed, not Developer ID signed/notarized.
+
+Auditing:
+
+  uv run pip-audit --skip-editable
+  uv run vulture cli backend --min-confidence 80
+  uv run cyclonedx-py environment --output-file dist/sbom.cdx.json
+
+Vulture currently reports reviewed framework/protocol parameters; see the launch
+report. Audit the actual deployment environment as well as a development env.
+For public publishing, signing and distribution manifests, follow
+'docs/RELEASING.md'; account configuration is required. No command here silently
+publishes a package or deploys the service.
+
+
+22. CURRENT LIMITATIONS
+-----------------------
+The local CLI and backend were tested, but unrestricted public launch still
+has prerequisites. See docs/LAUNCH_READINESS.md for full evidence.
+
+  - Hosted Windows/Linux CLI and Intel macOS results are not yet verified.
+  - PyPI/tap publication, Apple notarization and Windows signing are not complete.
+  - Expo SDK 57's generated dependency tree has unresolved transitive advisories.
+  - Generator auth is guidance, not enabled authentication.
+  - Some library/native deployment work remains project-specific.
+  - Production mail delivery and shared multi-worker rate limiting need adapters.
+  - Run only one offline sync process per account; multi-device conflict
+    resolution is not implemented.
+
+There is no billing or AI agent. The hidden reserved command can be inspected:
+
+  flunky ai
+  flunky ai --help
+
+It only reports that AI integration is not implemented; it does not call a model.
+
+Local verification recorded 625 passing tests, 92.50% combined coverage and
+109 real installed CLI invocations. Exact logs are under docs/verification/.
+
+
+23. COMPLETE BUILT-IN COMMAND HELP
+----------------------------------
+The following reference is copied from the generated Typer command reference.
+It lists exact arguments, defaults and option spellings for every visible
+command, including inverse boolean flags where supported. Global flags from
+section 6 are accepted even when a subcommand's help table does not repeat them.
+
+
+
+
+flunky
+------
+
+
+ Usage: flunky [OPTIONS] COMMAND [ARGS]...
+
+ FLUNKY - Developer Productivity CLI
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --json                        Machine-readable JSON                          │
+│ --quiet                       Suppress normal output                         │
+│ --no-color                    Disable color                                  │
+│ --yes                         Confirm prompts                                │
+│ --debug                       Show tracebacks                                │
+│ --version                     Show version                                   │
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ init        Generate a project. Example: flunky init demo --stack fastapi    │
+│             --type fullstack --yes.                                          │
+│ register    Create an account. Example: flunky register -u alice --email     │
+│             a@example.com --password-stdin.                                  │
+│ login       Sign in via browser. Scripts: flunky login --with-password -u    │
+│             alice --password-stdin.                                          │
+│ logout      Revoke the current session on the server and remove local        │
+│             credentials.                                                     │
+│ add         Quick-add a task. Example: flunky add 'fix login' -p high -d     │
+│             tomorrow -t backend.                                             │
+│ list        Find tasks. Example: flunky list --search login --completed      │
+│             false --sort=-priority.                                          │
+│ today       Show tasks due today. Example: flunky today --json.              │
+│ upcoming    Show future tasks. Example: flunky upcoming.                     │
+│ show        Inspect a task or choose one. Example: flunky show 42.           │
+│ done        Complete a task. Example: flunky done 42.                        │
+│ edit        Edit task fields. Example: flunky edit 42 --title 'ship release' │
+│             -p high.                                                         │
+│ rm          Soft-delete a task. Example: flunky rm 42 --yes; flunky undo     │
+│             restores it.                                                     │
+│ undo        Undo the last deletion or edit. Example: flunky undo.            │
+│ sync        Send queued offline changes in order. Example: flunky sync       │
+│             --json.                                                          │
+│ doctor      Check installation, backend, auth and terminal. Example: flunky  │
+│             doctor --json.                                                   │
+│ tui         Open the full-screen task board. Example: flunky tui (q to       │
+│             quit).                                                           │
+│ task        Commands for task management                                     │
+│ projects    Commands for project shortcuts                                   │
+│ structure   Apply project standards. Example: flunky structure apply . --yes │
+│ config      Settings and profiles. Example: flunky config list.              │
+│ completion  Shell completion. Example: flunky completion install zsh.        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky init
+-----------
+
+
+ Usage: flunky init [OPTIONS] [name] [legacy_stack] [legacy_name]
+
+ Generate a project. Example: flunky init demo --stack fastapi --type fullstack
+ --yes.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   name      <str>                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --stack                                    <str>  python, cli, fastapi, ds,  │
+│                                                   nextjs, mern, nestjs,      │
+│                                                   electron, react-native,    │
+│                                                   flutter; or a user         │
+│                                                   template name.             │
+│ --type                                     <str>  app, fullstack, monorepo,  │
+│                                                   library, cli.              │
+│                                                   [default: app]             │
+│ --addons                                   <str>  Comma-separated: docker,   │
+│                                                   ci, database, auth,        │
+│                                                   linting, docs-site,        │
+│                                                   testing, monorepo.         │
+│ --license                                  <str>  MIT or UNLICENSED.         │
+│                                                   [default: MIT]             │
+│ --dry-run           --no-dry-run                  [default: no-dry-run]      │
+│ --install           --no-install                  Install dependencies using │
+│                                                   checked, timed commands.   │
+│                                                   [default: no-install]      │
+│ --git               --no-git                      Initialize Git and create  │
+│                                                   the first commit.          │
+│                                                   [default: no-git]          │
+│ --open                                            Open the generated project │
+│                                                   in VS Code.                │
+│ --trust-template    --no-trust-template           Explicitly trust           │
+│                                                   installation hooks from a  │
+│                                                   user template.             │
+│                                                   [default:                  │
+│                                                   no-trust-template]         │
+│ --help                                            Show this message and      │
+│                                                   exit.                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky register
+---------------
+
+
+ Usage: flunky register [OPTIONS]
+
+ Create an account. Example: flunky register -u alice --email a@example.com
+ --password-stdin.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --username        -u      <str>                                              │
+│ --email                   <str>                                              │
+│ --password-stdin                                                             │
+│ --help                           Show this message and exit.                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky login
+------------
+
+
+ Usage: flunky login [OPTIONS]
+
+ Sign in via browser. Scripts: flunky login --with-password -u alice
+ --password-stdin.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --with-password                  Use password login instead of browser       │
+│                                  approval                                    │
+│ --username        -u      <str>                                              │
+│ --password-stdin                 Read password from stdin                    │
+│ --help                           Show this message and exit.                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky logout
+-------------
+
+
+ Usage: flunky logout [OPTIONS]
+
+ Revoke the current session on the server and remove local credentials.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --everywhere          Revoke every session and automation token              │
+│ --help                Show this message and exit.                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky add
+----------
+
+
+ Usage: flunky add [OPTIONS] {title}
+
+ Quick-add a task. Example: flunky add 'fix login' -p high -d tomorrow -t
+ backend.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    title      <str>  [required]                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --priority  -p      <str>  [default: medium]                                 │
+│ --due       -d      <str>                                                    │
+│ --tag       -t      <str>                                                    │
+│ --notes             <str>                                                    │
+│ --help                     Show this message and exit.                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky list
+-----------
+
+
+ Usage: flunky list [OPTIONS]
+
+ Find tasks. Example: flunky list --search login --completed false
+ --sort=-priority.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --completed           <str>                                                  │
+│ --priority    -p      <str>                                                  │
+│ --tag         -t      <str>                                                  │
+│ --search      -s      <str>                                                  │
+│ --sort                <str>                    [default: created_at]         │
+│ --limit               <int range> [1<=x<=100]  [default: 50]                 │
+│ --offset              <int range> [x>=0]       [default: 0]                  │
+│ --due-before          <str>                                                  │
+│ --due-after           <str>                                                  │
+│ --help                                         Show this message and exit.   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky today
+------------
+
+
+ Usage: flunky today [OPTIONS]
+
+ Show tasks due today. Example: flunky today --json.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky upcoming
+---------------
+
+
+ Usage: flunky upcoming [OPTIONS]
+
+ Show future tasks. Example: flunky upcoming.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky show
+-----------
+
+
+ Usage: flunky show [OPTIONS] [task_id]
+
+ Inspect a task or choose one. Example: flunky show 42.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   task_id      <int>                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky done
+-----------
+
+
+ Usage: flunky done [OPTIONS] [task_id]
+
+ Complete a task. Example: flunky done 42.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   task_id      <int>                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky edit
+-----------
+
+
+ Usage: flunky edit [OPTIONS] [task_id]
+
+ Edit task fields. Example: flunky edit 42 --title 'ship release' -p high.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   task_id      <int>                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --title             <str>                                                    │
+│ --priority  -p      <str>                                                    │
+│ --due       -d      <str>                                                    │
+│ --notes             <str>                                                    │
+│ --tag       -t      <str>                                                    │
+│ --help                     Show this message and exit.                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky rm
+---------
+
+
+ Usage: flunky rm [OPTIONS] [task_id]
+
+ Soft-delete a task. Example: flunky rm 42 --yes; flunky undo restores it.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   task_id      <int>                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --force  -f                                                                  │
+│ --help             Show this message and exit.                               │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky undo
+-----------
+
+
+ Usage: flunky undo [OPTIONS]
+
+ Undo the last deletion or edit. Example: flunky undo.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky sync
+-----------
+
+
+ Usage: flunky sync [OPTIONS]
+
+ Send queued offline changes in order. Example: flunky sync --json.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky doctor
+-------------
+
+
+ Usage: flunky doctor [OPTIONS]
+
+ Check installation, backend, auth and terminal. Example: flunky doctor --json.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky tui
+----------
+
+
+ Usage: flunky tui [OPTIONS]
+
+ Open the full-screen task board. Example: flunky tui (q to quit).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task
+-----------
+
+
+ Usage: flunky task [OPTIONS] COMMAND [ARGS]...
+
+ Commands for task management
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create                                                                       │
+│ list                                                                         │
+│ show                                                                         │
+│ update                                                                       │
+│ complete                                                                     │
+│ delete                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky task create
+------------------
+
+
+ Usage: flunky task create [OPTIONS]
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --title        -t      <str>  Task title                                     │
+│ --description  -d      <str>  Task description                               │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task list
+----------------
+
+
+ Usage: flunky task list [OPTIONS]
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --completed          Filter by completion status                             │
+│ --help               Show this message and exit.                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task show
+----------------
+
+
+ Usage: flunky task show [OPTIONS] {task_id}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    task_id      <int>  Task ID to show [required]                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task update
+------------------
+
+
+ Usage: flunky task update [OPTIONS] {task_id}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    task_id      <int>  Task ID to update [required]                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --title        -t      <str>  New title                                      │
+│ --description  -d      <str>  New description                                │
+│ --completed    -c             Mark as completed                              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task complete
+--------------------
+
+
+ Usage: flunky task complete [OPTIONS] {task_id}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    task_id      <int>  Task ID to mark as complete [required]              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky task delete
+------------------
+
+
+ Usage: flunky task delete [OPTIONS] {task_id}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    task_id      <int>  Task ID to delete [required]                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --force  -f        Skip confirmation                                         │
+│ --help             Show this message and exit.                               │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky projects
+---------------
+
+
+ Usage: flunky projects [OPTIONS] COMMAND [ARGS]...
+
+ Commands for project shortcuts
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ add                                                                          │
+│ list                                                                         │
+│ remove                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky projects add
+-------------------
+
+
+ Usage: flunky projects add [OPTIONS] {name} {path}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    name      <str>  [required]                                             │
+│ *    path      <str>  [required]                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky projects list
+--------------------
+
+
+ Usage: flunky projects list [OPTIONS]
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky projects remove
+----------------------
+
+
+ Usage: flunky projects remove [OPTIONS] {name}
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    name      <str>  [required]                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky structure
+----------------
+
+
+ Usage: flunky structure [OPTIONS] COMMAND [ARGS]...
+
+ Apply project standards. Example: flunky structure apply . --yes
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ apply  Add missing standard files and preserve existing content. Example:    │
+│        flunky structure apply . --dry-run.                                   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky structure apply
+----------------------
+
+
+ Usage: flunky structure apply [OPTIONS] {directory}
+
+ Add missing standard files and preserve existing content. Example: flunky
+ structure apply . --dry-run.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    directory      <path>  [required]                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --dry-run    --no-dry-run      [default: no-dry-run]                         │
+│ --help                         Show this message and exit.                   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky config
+-------------
+
+
+ Usage: flunky config [OPTIONS] COMMAND [ARGS]...
+
+ Settings and profiles. Example: flunky config list.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ list     Show settings. Example: flunky config list --json.                  │
+│ get      Read a profile value. Example: flunky config get api_url.           │
+│ set      Set api_url or theme. Example: flunky config set api_url            │
+│          http://localhost:8000.                                              │
+│ profile  Switch local/staging/prod profile. Example: flunky config profile   │
+│          staging.                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky config list
+------------------
+
+
+ Usage: flunky config list [OPTIONS]
+
+ Show settings. Example: flunky config list --json.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky config get
+-----------------
+
+
+ Usage: flunky config get [OPTIONS] {key}
+
+ Read a profile value. Example: flunky config get api_url.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    key      <str>  [required]                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky config set
+-----------------
+
+
+ Usage: flunky config set [OPTIONS] {key} {value}
+
+ Set api_url or theme. Example: flunky config set api_url
+ http://localhost:8000.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    key        <str>  [required]                                            │
+│ *    value      <str>  [required]                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky config profile
+---------------------
+
+
+ Usage: flunky config profile [OPTIONS] {name}
+
+ Switch local/staging/prod profile. Example: flunky config profile staging.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    name      <str>  [required]                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+flunky completion
+-----------------
+
+
+ Usage: flunky completion [OPTIONS] COMMAND [ARGS]...
+
+ Shell completion. Example: flunky completion install zsh.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ install  Install shell completion. Example: flunky completion install zsh.   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+
+
+flunky completion install
+-------------------------
+
+
+ Usage: flunky completion install [OPTIONS] [shell]
+
+ Install shell completion. Example: flunky completion install zsh.
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   shell      <str>  [default: zsh]                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --path        <path>  Write completion to a specific file without editing    │
+│                       shell profiles                                         │
+│ --help                Show this message and exit.                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+END OF GUIDE

@@ -4,6 +4,7 @@ venv
 .install-check
 .env
 .env.*
+!**/.env.example.j2
 *.db
 *.db-*
 *.log
@@ -15,3 +16,9 @@ venv
 dist
 build
 my-ml-project
+
+site
+coverage.xml
+.hypothesis
+.idea
+.vscode

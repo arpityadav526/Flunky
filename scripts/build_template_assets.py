@@ -13,9 +13,11 @@ def pack(name, files, *, description="", hooks=(), next_steps=()):
         shutil.rmtree(directory)
     directory.mkdir(parents=True)
     specs = []
-    for index, (dest, content) in enumerate(files.items()):
-        source = f"{index:02}.j2"
-        (directory / source).write_text(content.rstrip() + "\n", encoding="utf-8")
+    for dest, content in files.items():
+        source = dest.replace("{{ package_name }}", "__package_name__") + ".j2"
+        target = directory / source
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content.rstrip() + "\n", encoding="utf-8")
         specs.append({"src": source, "dest": dest})
     (directory / "manifest.json").write_text(
         json.dumps(

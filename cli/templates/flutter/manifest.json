@@ -5,27 +5,27 @@
   "description": "Flutter application with tested widget entry point",
   "files": [
     {
-      "src": "00.j2",
+      "src": "pubspec.yaml.j2",
       "dest": "pubspec.yaml"
     },
     {
-      "src": "01.j2",
+      "src": "lib/main.dart.j2",
       "dest": "lib/main.dart"
     },
     {
-      "src": "02.j2",
+      "src": "test/widget_test.dart.j2",
       "dest": "test/widget_test.dart"
     },
     {
-      "src": "03.j2",
+      "src": "analysis_options.yaml.j2",
       "dest": "analysis_options.yaml"
     },
     {
-      "src": "04.j2",
+      "src": "README.md.j2",
       "dest": "README.md"
     },
     {
-      "src": "05.j2",
+      "src": ".gitignore.j2",
       "dest": ".gitignore"
     }
   ],

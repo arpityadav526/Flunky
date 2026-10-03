@@ -5,71 +5,71 @@
   "description": "mern application",
   "files": [
     {
-      "src": "00.j2",
+      "src": "src/greeting.mjs.j2",
       "dest": "src/greeting.mjs"
     },
     {
-      "src": "01.j2",
+      "src": "tests/greeting.test.mjs.j2",
       "dest": "tests/greeting.test.mjs"
     },
     {
-      "src": "02.j2",
+      "src": ".gitignore.j2",
       "dest": ".gitignore"
     },
     {
-      "src": "03.j2",
+      "src": "README.md.j2",
       "dest": "README.md"
     },
     {
-      "src": "04.j2",
+      "src": ".nvmrc.j2",
       "dest": ".nvmrc"
     },
     {
-      "src": "05.j2",
+      "src": ".npmrc.j2",
       "dest": ".npmrc"
     },
     {
-      "src": "06.j2",
+      "src": "tsconfig.json.j2",
       "dest": "tsconfig.json"
     },
     {
-      "src": "07.j2",
+      "src": "eslint.config.mjs.j2",
       "dest": "eslint.config.mjs"
     },
     {
-      "src": "08.j2",
+      "src": ".dockerignore.j2",
       "dest": ".dockerignore"
     },
     {
-      "src": "09.j2",
+      "src": "Dockerfile.j2",
       "dest": "Dockerfile"
     },
     {
-      "src": "10.j2",
+      "src": "index.html.j2",
       "dest": "index.html"
     },
     {
-      "src": "11.j2",
+      "src": "src/main.tsx.j2",
       "dest": "src/main.tsx"
     },
     {
-      "src": "12.j2",
+      "src": "server/index.mjs.j2",
       "dest": "server/index.mjs"
     },
     {
-      "src": "13.j2",
+      "src": "server/database.mjs.j2",
       "dest": "server/database.mjs"
     },
     {
-      "src": "14.j2",
+      "src": ".env.example.j2",
       "dest": ".env.example"
     },
     {
-      "src": "15.j2",
+      "src": "vite.config.ts.j2",
       "dest": "vite.config.ts"
     },
     {
-      "src": "16.j2",
+      "src": "package.json.j2",
       "dest": "package.json"
     }
   ],

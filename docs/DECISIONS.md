@@ -37,3 +37,5 @@
 - M7: Readiness requires the expected Alembic revision (0004), not merely an existing version table; update this check alongside future schema migrations.
 - M7: TUI starts with the task list focused; Escape leaves search, preserving ordinary typing without hijacking q inside the search field.
 - M7: Upgraded generated Electron to 44.5.1 and Expo to SDK 57 with React Native 0.86.3/React 19.2.3 after npm audits; Electron is clean, but Expo's unpatched upstream braces/node-forge and uuid advisories remain an explicit release limitation (docs/verification/expo-audit.json).
+- Repository cleanup: Replace numbered template assets with destination-shaped names; keep manifest destinations/content unchanged and explicitly include .env.example.j2 in Git/Docker contexts.
+- Repository cleanup: Keep user data, editor settings and existing environments; remove regenerable build/test output, the byte-identical status.txt duplicate and the unused legacy backend logger shim; consolidate the TXT guide and historical tree under docs/.

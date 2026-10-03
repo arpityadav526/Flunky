@@ -5,7 +5,7 @@
 - Ruff lint and format: passed (project-local rules).
 - Mypy: passed for 19 modules using legacy follow-imports=silent and ignore-missing-imports; strict checking starts with new modules in M1.
 - Full original test suite: 12 passed on macOS / Python 3.13.
-- Source tree: M0_TREE.txt. Local DB and generated sample retained.
+- Historical source tree: history/M0_TREE.txt. Local DB and generated sample retained.
 
 ## M1 — correctness, packaging, tests and CI
 
@@ -77,3 +77,11 @@
 - Updated Electron to 44.5.1 and Expo to 57.0.26/RN 0.86.3 after generated dependency audits. Both passed fresh npm install/test/lint/build; Electron audit is clean, Expo retains 23 upstream transitive advisories (7 moderate, 16 high). Both 1,280-combination generation subsets passed again after changes.
 - Strict MkDocs build and regenerated command help/reference passed. Public PyPI, hosted Windows/Linux/Intel CLI runs, native publisher signing and distribution-index submission have NOT been performed; see LAUNCH_READINESS.md for blockers and required maintainer work.
 - Final rebuilt arm64 standalone binary: 28,804,640 bytes. Real --version, --help and fullstack generation into a temporary directory passed; ad-hoc codesign verification passed.
+
+## Repository cleanup follow-up
+
+- Reorganized all 154 template assets into destination-shaped filenames and directories; compared every template's bytes and rendered destination against the previous Git revision with no content changes.
+- Removed regenerable build/site outputs, temporary installation, caches/logs, the redundant root status report and an unused legacy logger shim. Preserved databases, credentials, existing environments, editor settings and the user-generated sample project.
+- Moved the complete text guide to docs/USER_GUIDE.txt and the historical M0 tree to docs/history/M0_TREE.txt; updated README and documentation links.
+- Ruff lint/format, mypy (47 modules) and strict MkDocs build passed. Full suite: 625 passed, 92.58% coverage, three snapshots passed.
+- Built a new wheel/sdist outside the repository and confirmed all 154 manifest-referenced template sources are packaged, including hidden environment examples. Installed the wheel in a fresh environment: all 109 real CLI invocations passed again, including generation of every stack.

@@ -5,87 +5,87 @@
   "description": "Universal project standards",
   "files": [
     {
-      "src": "00.j2",
+      "src": "README.md.j2",
       "dest": "README.md"
     },
     {
-      "src": "01.j2",
+      "src": ".gitignore.j2",
       "dest": ".gitignore"
     },
     {
-      "src": "02.j2",
+      "src": ".editorconfig.j2",
       "dest": ".editorconfig"
     },
     {
-      "src": "03.j2",
+      "src": ".gitattributes.j2",
       "dest": ".gitattributes"
     },
     {
-      "src": "04.j2",
+      "src": "CONTRIBUTING.md.j2",
       "dest": "CONTRIBUTING.md"
     },
     {
-      "src": "05.j2",
+      "src": "SECURITY.md.j2",
       "dest": "SECURITY.md"
     },
     {
-      "src": "06.j2",
+      "src": "CHANGELOG.md.j2",
       "dest": "CHANGELOG.md"
     },
     {
-      "src": "07.j2",
+      "src": "CODE_OF_CONDUCT.md.j2",
       "dest": "CODE_OF_CONDUCT.md"
     },
     {
-      "src": "08.j2",
+      "src": ".env.example.j2",
       "dest": ".env.example"
     },
     {
-      "src": "09.j2",
+      "src": "Makefile.j2",
       "dest": "Makefile"
     },
     {
-      "src": "10.j2",
+      "src": "docs/index.md.j2",
       "dest": "docs/index.md"
     },
     {
-      "src": "11.j2",
+      "src": "docs/development.md.j2",
       "dest": "docs/development.md"
     },
     {
-      "src": "12.j2",
+      "src": "docs/architecture.md.j2",
       "dest": "docs/architecture.md"
     },
     {
-      "src": "13.j2",
+      "src": "docs/decisions.md.j2",
       "dest": "docs/decisions.md"
     },
     {
-      "src": "14.j2",
+      "src": "scripts/check.py.j2",
       "dest": "scripts/check.py"
     },
     {
-      "src": "15.j2",
+      "src": ".github/ISSUE_TEMPLATE/bug_report.yml.j2",
       "dest": ".github/ISSUE_TEMPLATE/bug_report.yml"
     },
     {
-      "src": "16.j2",
+      "src": ".github/PULL_REQUEST_TEMPLATE.md.j2",
       "dest": ".github/PULL_REQUEST_TEMPLATE.md"
     },
     {
-      "src": "17.j2",
+      "src": ".github/dependabot.yml.j2",
       "dest": ".github/dependabot.yml"
     },
     {
-      "src": "18.j2",
+      "src": ".github/workflows/ci.yml.j2",
       "dest": ".github/workflows/ci.yml"
     },
     {
-      "src": "19.j2",
+      "src": ".pre-commit-config.yaml.j2",
       "dest": ".pre-commit-config.yaml"
     },
     {
-      "src": "20.j2",
+      "src": ".devcontainer/devcontainer.json.j2",
       "dest": ".devcontainer/devcontainer.json"
     }
   ],
