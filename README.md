@@ -1,263 +1,96 @@
-# FLUNKY – Full-Stack Task Management CLI
+# Flunky
 
-FLUNKY is a production-ready task management system built with a FastAPI backend and a powerful CLI interface. It enables developers to manage tasks efficiently directly from the terminal with secure authentication, clean UI, and automated workflows.
+Developer tasks and project scaffolding, from your terminal.
 
----
+![Flunky CLI demo](docs/demos/cli.gif)
 
-## 🚀 Features
+Flunky combines a Typer/Rich CLI, an optional Textual task board, and a FastAPI backend. It supports ten project stacks, safe additive project generation, offline task edits, and revocable login sessions. This checkout is locally verified on Apple Silicon; hosted Windows/Linux CI and public distribution are still release gates. See [launch readiness](docs/LAUNCH_READINESS.md).
 
-### 🔐 Authentication
+## Install in 30 seconds
 
-* JWT-based secure authentication
-* Password hashing using bcrypt
-* Persistent login via local token storage
+From this checkout, with Python 3.10+ and uv installed:
 
-### 📝 Task Management
-
-* Create, update, delete tasks
-* Mark tasks as complete
-* Filter tasks by status
-* User-specific task isolation
-
-### 💻 CLI Experience
-
-* Built with Typer + Rich
-* Interactive prompts + command-line arguments (dual mode)
-* Beautiful tables, panels, and colored output
-
-### ⚙️ Backend (FastAPI)
-
-* 7 REST API endpoints
-* Dependency injection with `Depends`
-* Pydantic validation
-* SQLAlchemy ORM
-
-### 🧪 Testing
-
-* Pytest-based test suite
-* Covers authentication and task workflows
-* Includes edge cases (invalid login, unauthorized access, etc.)
-
-### 🐳 Docker Support
-
-* Lightweight containerized backend
-* Measured arm64 image: 104,965,602 bytes (Docker image inspect, M2 build; architecture/dependency versions affect size)
-* Ready for deployment
-
-### 🔄 CI/CD (GitHub Actions)
-
-* Automated testing on every push and PR
-* Docker image build validation
-* Ensures production stability
-
----
-
-## 🏗️ Architecture
-
-```
-flunky/
-├── backend/        # FastAPI backend
-├── cli/            # CLI interface
-├── tests/          # pytest test suite
-├── Dockerfile
-├── pyproject.toml
-└── .github/workflows/   # CI/CD pipelines
+```sh
+uv tool install .
+flunky --help
+flunky init my-app --stack fastapi --yes
 ```
 
----
+Alternatively, `pipx install .` creates an isolated installation. After the maintainer publishes and verifies the PyPI release, use `uv tool install flunky` or `pipx install flunky`. The availability and ownership of that public package name have not been verified by this checkout. Do not assume a package with the same name is this release.
 
-## 🛠️ Tech Stack
+## Tasks
 
-* **Backend:** FastAPI, SQLAlchemy, Pydantic
-* **Authentication:** JWT (python-jose), bcrypt
-* **CLI:** Typer, Rich, HTTPX
-* **Database:** SQLite (local), PostgreSQL-ready
-* **Testing:** Pytest, pytest-cov
-* **DevOps:** Docker, GitHub Actions
+Start the local backend from this checkout:
 
----
-
-## ⚡ Installation & Setup
-
-You can install FLUNKY either globally (recommended for daily use) or locally for development.
-
-### 🌍 1. Global Cross-Platform Installation (Recommended)
-
-To install FLUNKY globally on **macOS**, **Linux**, or **Windows** without cloning the repository, use **`pipx`** (the standard way to run isolated Python CLI tools):
-
-```bash
-# Install globally from GitHub directly
-pipx install git+https://github.com/arpityadav526/flunky.git
-```
-
-*Note: If you don't have `pipx`, you can install it via Homebrew (`brew install pipx`), apt (`sudo apt install pipx`), or pip (`pip install pipx`).*
-
-Alternatively, you can install it globally via standard `pip`:
-```bash
-pip install git+https://github.com/arpityadav526/flunky.git
-```
-
----
-
-### 💻 2. Local Development Installation
-
-If you want to run the backend and contribute to the CLI code:
-
-#### A. Clone the repository
-```bash
-git clone https://github.com/arpityadav526/flunky.git
-cd flunky
-```
-
-#### B. Create virtual environment
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-```
-
-#### C. Install dependencies & CLI in editable mode
-```bash
+```sh
 uv sync --extra dev --extra test
-pip install -e .
-```
-
----
-
-## ▶️ Running the Application
-
-### Start backend
-
-```bash
 uv run alembic upgrade head
-uv run uvicorn backend.main:app --reload
+uv run uvicorn backend.main:app
 ```
 
-API Docs:
-http://127.0.0.1:8000/docs
+In another terminal:
 
----
-
-## 💻 CLI Usage
-
-### Register
-
-```bash
+```sh
 flunky register
-```
-
-### Login
-
-```bash
 flunky login
+flunky add "Fix login bug" -p high -d tomorrow -t backend
+flunky today
+flunky list --json
+flunky done 1
+flunky undo
+flunky tui
+flunky sync
 ```
 
-### Create task
+`login` uses browser device approval. Scripts can use `login --with-password --username NAME --password-stdin`. Access tokens expire; refresh tokens rotate, and logout revokes server sessions. Credentials use the OS keychain, with a warned, restricted-file fallback. Offline edits are queued and replayed in order when you run `sync`.
 
-```bash
-flunky task create -t "Learn FastAPI" -d "Build backend project"
+Every command supports global `--json`, `--quiet`, `--yes`, `--no-color`, and `--debug`. Piped/CI execution does not prompt. See the [generated command reference](docs/COMMANDS.md), [backend and migrations](docs/BACKEND.md), and [project blueprints](docs/BLUEPRINTS.md).
+
+## Project generation
+
+```sh
+flunky init my-app --stack fastapi --type fullstack --addons docker,ci --license MIT --yes
+flunky init preview --stack nextjs --dry-run
+flunky structure apply existing-project --dry-run
+flunky structure apply existing-project --yes
 ```
 
-### List tasks
-
-```bash
-flunky task list
-```
-
-### Complete task
-
-```bash
-flunky task complete 1
-```
-
-### Delete task
-
-```bash
-flunky task delete 1
-```
-
----
-
-## 🧪 Running Tests
-
-```bash
-pytest --cov=backend --cov=cli
-```
-
----
-
-## 🐳 Docker
-
-### Build image
-
-```bash
-docker build -t flunky .
-```
-
-### Run container
-
-```bash
-docker run -p 8000:8000 flunky
-```
-
----
-
-## 🔄 CI/CD
-
-This project uses GitHub Actions to:
-
-* Run automated tests on every push and pull request
-* Validate Docker image builds successfully
-
-Workflows:
-
-* FLUNKY CI
-* Docker Build Check
-
----
-
-## 📊 Current Status
-
-```
-✅ Backend API          - COMPLETE
-✅ Authentication       - COMPLETE
-✅ CLI System           - COMPLETE
-✅ Task CRUD            - COMPLETE
-✅ Testing (pytest)     - COMPLETE
-✅ Dockerization        - COMPLETE
-✅ CI/CD (GitHub Actions) - COMPLETE
-⚠️ Advanced Features    - IN PROGRESS
-```
-
----
-
-## 🔮 Future Improvements
-
-* Task statistics (`flunky stats`)
-* Search functionality
-* Task priorities & due dates
-* Export/import tasks
-* Deployment to cloud (Render/Railway)
-
----
-
-## 📌 Author
-
-**Arpit Yadav**
-B.Tech CSE (Data Science)
-
-GitHub: https://github.com/arpityadav526
-LinkedIn: https://www.linkedin.com/in/arpit-yadav-63b2b6293
-
----
-
-## ⭐ If you like this project
-
-Give it a star ⭐ and feel free to contribute!
+Stacks: Python, Python CLI, FastAPI, data science, Next.js, MERN, NestJS, Electron, Expo/React Native, and Flutter. Layouts: app, fullstack, monorepo, library, CLI. Base files include docs, policies, tests, checks, CI, pre-commit and devcontainer configuration. Generation preserves existing files; installation, Git initialization and opening an editor are explicit options. Review generated projects before deployment: auth integration, native packaging/signing, and library publication require additional work.
 
 ## Terminal setup
 
-Use your terminal's system monospace font (Menlo on macOS, Cascadia Mono on Windows) or another font with Unicode support. No patched/Nerd Font is required. Set `TERM=dumb` for ASCII output, `NO_COLOR=1` or `--no-color` to disable colors, and `FLUNKY_THEME=high-contrast` for a monochrome bold theme. `FORCE_COLOR=1` enables color when redirecting; NO_COLOR takes precedence. Use `flunky completion install zsh` for macOS shells, or bash/fish/PowerShell as appropriate. `--path FILE` writes a completion script without changing shell profiles.
+Use a UTF-8 terminal and a monospace font you find readable; no icon font is required. Flunky uses ASCII fallbacks where Unicode is unavailable and respects `NO_COLOR`. `flunky config set theme high-contrast` enables the high-contrast theme. Install completion with `flunky completion install zsh` (also bash, fish, PowerShell/pwsh). The command prints shell setup instructions instead of editing your profile.
 
-The CLI was exercised on macOS arm64 through real subprocesses and a VHS zsh pseudo-terminal; the Textual board also has a headless keyboard/search test. Terminal.app, iTerm2, Warp, VS Code, Windows Terminal and cmd still need their human acceptance pass; a CI matrix is configured but is not evidence that those interfaces were tested. `flunky doctor` reports the current terminal and backend state.
+Locally exercised: macOS zsh, a VHS/ttyd PTY, and non-TTY subprocess output. Terminal.app, iTerm2, Warp, VS Code terminal, Windows Terminal, PowerShell and cmd remain a manual visual compatibility checklist, not a claim of completed testing. `flunky doctor` reports runtime, backend, credential-storage and terminal diagnostics.
 
-Quick commands: `flunky add "fix login" -p high -d tomorrow -t backend`, `flunky list`, `flunky today`, `flunky upcoming`, `flunky show 1`, `flunky done 1`, `flunky edit 1 --title "ship fix"`, `flunky rm 1 --yes`, `flunky undo`, `flunky sync`, and `flunky tui`. Offline temporary IDs are negative: use `flunky done -- -1`. Offline lists show only cached tasks; reconnect and sync before expecting a complete server view.
+## Architecture
+
+```mermaid
+flowchart LR
+  CLI[Typer / Rich / Textual] --> Cache[SQLite cache + outbox]
+  CLI --> API[FastAPI /v1]
+  API --> Auth[Argon2id + rotating sessions]
+  API --> DB[Async SQLAlchemy]
+  DB --> SQLite[SQLite development]
+  DB --> Postgres[Postgres 16]
+  CLI --> Templates[Validated layered Jinja blueprints]
+```
+
+The backend uses Alembic migrations, structured request logs, pagination/filtering, task soft deletion, and session/PAT revocation. Docker runs as a non-root user. The M2 arm64 image measured 104,965,602 bytes; the final build measurement is recorded in the launch report. Production email delivery and a shared multi-worker rate-limit adapter still need deployment-specific implementation. There is no billing or AI agent; only a hidden provider extension contract exists.
+
+## Develop and verify
+
+```sh
+uv sync --extra dev --extra test --extra docs
+uv run ruff check cli backend tests scripts
+uv run ruff format --check cli backend tests scripts
+uv run mypy
+uv run python -m pytest --cov --cov-fail-under=90
+uv run python -m scripts.verify_live
+uv run python -m scripts.verify_blueprints
+uv run python -m scripts.generate_docs
+uv run mkdocs build --strict
+uv build
+```
+
+[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Verification evidence](docs/VERIFICATION.md) · [Release procedure](docs/RELEASING.md) · [MIT license](LICENSE)

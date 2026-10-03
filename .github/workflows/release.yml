@@ -1,0 +1,127 @@
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  version:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      released: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+  package:
+    needs: version
+    if: always() && (needs.version.outputs.released == 'true' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+      - run: uv sync --locked --extra dev --extra test --extra release
+      - run: uv run ruff check cli backend tests scripts
+      - run: uv run mypy
+      - run: uv run python -m pytest --cov --cov-fail-under=90
+      - run: uv build
+      - run: uv run cyclonedx-py environment --output-file dist/sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+  binaries:
+    needs: version
+    if: always() && (needs.version.outputs.released == 'true' || github.event_name == 'workflow_dispatch')
+    strategy:
+      matrix:
+        include:
+          - os: macos-15
+            asset: flunky-macos-arm64
+          - os: macos-15-intel
+            asset: flunky-macos-x64
+          - os: windows-latest
+            asset: flunky-windows-x64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+      - run: uv sync --locked --extra release
+      - run: uv run python -m scripts.build_binary
+      - shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then BIN=dist/flunky.exe; else BIN=dist/flunky; fi
+          "$BIN" --help
+          "$BIN" --version
+          "$BIN" init binary-check --stack python --yes --json
+          mv "$BIN" "dist/${{ matrix.asset }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+  publish:
+    needs: [version, package, binaries]
+    if: needs.version.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      - run: rm dist/sbom.cdx.json
+      - uses: pypa/gh-action-pypi-publish@release/v1
+  assets:
+    needs: [version, package, binaries]
+    if: needs.version.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+      - run: python scripts/distribution_manifests.py artifacts --version "${VERSION#v}" --repository "$GITHUB_REPOSITORY"
+        env:
+          VERSION: ${{ needs.version.outputs.tag }}
+      - run: gh release upload "$TAG" artifacts/* --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+  tap:
+    needs: [version, assets]
+    if: needs.version.outputs.released == 'true' && vars.HOMEBREW_TAP != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.HOMEBREW_TAP }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - run: gh release download "$TAG" --repo "$SOURCE" --pattern flunky.rb
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+          SOURCE: ${{ github.repository }}
+      - run: |
+          mkdir -p Formula
+          mv flunky.rb Formula/flunky.rb
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Formula/flunky.rb
+          git commit -m "chore: update Flunky formula"
+          git push

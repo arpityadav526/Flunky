@@ -7,6 +7,8 @@ name = "flunky"
 version = "0.1.0"
 description = "Developer tasks and project scaffolding from your terminal"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
   "typer>=0.27,<0.28",
@@ -57,6 +59,13 @@ dev = [
     "pip-audit>=2",
     "vulture>=2",
     "types-dateparser>=1.4.3.20260907",
+]
+docs = [
+    "mkdocs-material>=9,<10",
+]
+release = [
+    "cyclonedx-bom>=7,<8",
+    "pyinstaller>=6,<7",
 ]
 
 [project.scripts]

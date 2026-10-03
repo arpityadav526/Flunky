@@ -56,3 +56,11 @@
 - Built wheel and sdist; reinstalled package and ran the documented fullstack init dry run through the installed CLI.
 - Generated all ten standalone stacks into isolated /tmp directories. Python, CLI, FastAPI and data-science projects passed uv installation, pytest and ruff. Next.js, MERN, NestJS, Electron and Expo passed npm installation, tests, lint and build; MERN also passed typecheck. Flutter passed pub get, analyze and widget tests.
 - This verifies build/test entry points, not native signing, app-store packaging, desktop visual behavior or production deployment. Generated auth is guidance only; library layouts retain the selected stack's application semantics.
+- Exhaustive follow-up: all 12,800 stack × type × add-on subsets generated and parsed successfully in temporary directories.
+
+## M6 — documentation and distribution preparation
+
+- README rewritten to match implemented behavior; generated nested command reference and MkDocs Material strict build passed.
+- Ruff lint/format and mypy passed (48 modules); full suite: 623 passed, 92.45% coverage, three snapshots passed.
+- PyInstaller built a 28,799,008-byte arm64 executable locally. Its version and fullstack dry-run commands passed; codesign verification passed for its ad-hoc signature, not a Developer ID signature or notarization.
+- Release-please, OIDC publishing, binary matrix, checksum-derived Homebrew/Scoop/winget artifacts, optional tap update, Dependabot and CodeQL are configured. Hosted execution and account setup remain unverified.

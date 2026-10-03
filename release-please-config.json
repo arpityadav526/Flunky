@@ -1,0 +1,10 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "flunky",
+      "include-component-in-tag": false,
+      "extra-files": ["cli/_version.py"]
+    }
+  }
+}

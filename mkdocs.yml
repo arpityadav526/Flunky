@@ -1,0 +1,20 @@
+site_name: Flunky
+site_description: Developer tasks and safe project scaffolding
+repo_url: https://github.com/arpityadav526/Flunky
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: cyan
+nav:
+  - Home: index.md
+  - Commands: COMMANDS.md
+  - Blueprints: BLUEPRINTS.md
+  - Backend: BACKEND.md
+  - Releases: RELEASING.md
+  - Verification: VERIFICATION.md
+  - Launch readiness: LAUNCH_READINESS.md
+  - Decisions: DECISIONS.md
+validation:
+  nav:
+    omitted_files: ignore

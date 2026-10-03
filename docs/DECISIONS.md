@@ -30,3 +30,6 @@
 - M5: MIT and UNLICENSED are the initial license choices; linting, tests and CI are baseline features even when their add-on names are omitted.
 - M5: Fullstack composes the selected stack with Next.js or FastAPI; CLI layout adds a Python CLI beside non-CLI stack code, and library layout isolates the stack under packages/.
 - M5: The auth add-on is an explicit integration guide, not a claim of implemented authentication; mobile native wrappers and signing remain platform SDK steps.
+- M6: Distribution manifests are generated from real final binary bytes; public PyPI/tap/bucket ownership and signing are explicit maintainer prerequisites, never placeholder claims.
+- M6: Release-please triggers build/publish jobs in the same workflow because GITHUB_TOKEN-created releases do not reliably trigger a separate release-event workflow.
+- M6: MkDocs builds a reviewable artifact; publishing a docs domain is deferred until the maintainer configures a hosting destination.
