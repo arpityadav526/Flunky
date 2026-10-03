@@ -1,37 +1,17 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-
-# Virtual environments
-venv/
-env/
-.venv/
-
-# IDE
-.vscode/
-.idea/
-
-# Git
-.git/
-
-# Database
+.git
+.venv
+venv
+.install-check
+.env
+.env.*
 *.db
-*.sqlite3
-
-# Local config
-.flunky/
-
-# OS
-.DS_Store
-
-# Tests cache
-.pytest_cache/
-.coverage
-htmlcov/
+*.db-*
+*.log
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage*
+dist
+build
+my-ml-project

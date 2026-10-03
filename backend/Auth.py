@@ -4,7 +4,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from backend.database import get_db
@@ -48,11 +49,11 @@ def verify_token(token_str: str) -> str:
         )
 
 
-def get_current_user(
-    token_str: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+async def get_current_user(
+    token_str: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ) -> User:
     username = verify_token(token_str)
-    user = db.query(User).filter(User.username == username).first()
+    user = await db.scalar(select(User).where(User.username == username))
 
     if user is None:
         raise HTTPException(

@@ -18,3 +18,12 @@
 - Added 12-cell macOS/Windows/Linux × Python 3.10–3.13 CI matrix and Docker build job; hosted jobs have NOT been run from this workspace.
 - Template generation tests mock legacy post-create installers; ecosystem installs are deferred to M5.
 - One upstream Starlette TestClient deprecation warning remains with the latest resolver result.
+
+## M2 — async backend and production infrastructure
+
+- Ruff lint/format and mypy (29 modules, strict for new backend modules): passed.
+- Full suite: 82 passed, 92.58% combined coverage, three CLI snapshots passed.
+- Migration test: 0001 legacy data → head → downgrade → upgrade → base → head passed without losing the legacy task.
+- `docker build -t flunky:m2 .`: passed on arm64. Image inspect reports 104,965,602 bytes and user flunky.
+- Live isolated Docker network: PostgreSQL 16 + Alembic + two-worker Gunicorn API; readiness, registration/login, SQL JSON tag/priority filter, soft delete and restore passed. Temporary containers, network and anonymous DB volume removed after verification.
+- Local user database was not migrated or modified; upgrade procedure is documented in BACKEND.md.

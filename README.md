@@ -41,7 +41,7 @@ FLUNKY is a production-ready task management system built with a FastAPI backend
 ### 🐳 Docker Support
 
 * Lightweight containerized backend
-* Optimized image size (~220MB)
+* Measured arm64 image: 104,965,602 bytes (Docker image inspect, M2 build; architecture/dependency versions affect size)
 * Ready for deployment
 
 ### 🔄 CI/CD (GitHub Actions)
@@ -60,7 +60,7 @@ flunky/
 ├── cli/            # CLI interface
 ├── tests/          # pytest test suite
 ├── Dockerfile
-├── requirements.txt
+├── pyproject.toml
 └── .github/workflows/   # CI/CD pipelines
 ```
 
@@ -117,7 +117,7 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 #### C. Install dependencies & CLI in editable mode
 ```bash
-pip install -r requirements.txt
+uv sync --extra dev --extra test
 pip install -e .
 ```
 
@@ -128,7 +128,8 @@ pip install -e .
 ### Start backend
 
 ```bash
-uvicorn backend.main:app --reload
+uv run alembic upgrade head
+uv run uvicorn backend.main:app --reload
 ```
 
 API Docs:

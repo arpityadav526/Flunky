@@ -1,12 +1,13 @@
+import asyncio
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 
-os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite://"
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from backend.database import get_db
 from backend.main import app
@@ -15,14 +16,17 @@ from backend.models import Base
 
 @pytest.fixture
 def client(tmp_path) -> Iterator[TestClient]:
-    engine = create_engine(
-        f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
-    )
-    factory = sessionmaker(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'test.db'}", poolclass=NullPool)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    def override_get_db() -> Iterator[Session]:
-        with factory() as session:
+    async def prepare():
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+
+    asyncio.run(prepare())
+
+    async def override_get_db() -> AsyncIterator[AsyncSession]:
+        async with factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
@@ -31,4 +35,4 @@ def client(tmp_path) -> Iterator[TestClient]:
             yield test_client
     finally:
         app.dependency_overrides.clear()
-        engine.dispose()
+        asyncio.run(engine.dispose())

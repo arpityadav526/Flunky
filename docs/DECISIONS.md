@@ -7,3 +7,8 @@
 - M1: Apply strict mypy to new code; retain explicit legacy overrides until each backend/CLI module is migrated.
 - M1: Preserve existing API payloads and commands; use bounded connection retries only, never automatically replay potentially committed HTTP writes.
 - M1: Package all template assets with hatchling and use uv locked installs in CI (https://hatch.pypa.io/dev/config/build/, https://docs.astral.sh/uv/guides/integration/github/).
+- M2: Preserve root API routes as undocumented aliases; /v1 is canonical and returns paginated arrays with X-Total-Count for compatibility.
+- M2: Use SQLAlchemy 2.0 (not 2.1), async_sessionmaker(expire_on_commit=False), and Alembic's async-engine recipe; no schema creation on app import.
+- M2: Use dialect-specific SQL JSON table functions for exact tag filtering before pagination; keep SQLite and PostgreSQL results consistent.
+- M2: Keep historical migrations immutable and test legacy data preservation; existing DBs require a backup and baseline stamp before upgrade.
+- M2: Omit subtasks to keep the task model small; use gunicorn with the maintained uvicorn-worker package in Docker.

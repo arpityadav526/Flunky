@@ -1,248 +1,114 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from starlette.status import HTTP_201_CREATED
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from backend import models, schemas
-from backend.Auth import (
-    create_access_token,
-    get_current_user,
-    hash_password,
-    verify_password,
-)
-from backend.database import engine, get_db
-from backend.logger import logger
-from backend.models import Task
+import structlog
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException
 
-app = FastAPI(title="Flunky_CLI")
-
-logger.info("Starting FLUNKY backend application")
-models.Base.metadata.create_all(bind=engine)
-logger.info("Database tables ensured")
+from backend.core.config import settings
+from backend.core.logging import configure_logging
+from backend.database import SessionLocal, engine
+from backend.routers import auth, tasks
 
 
-@app.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-def user_registration(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    logger.info("Registration attempt for username='%s', email='%s'", user.username, user.email)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    configure_logging()
+    if settings.sentry_dsn:
+        import sentry_sdk
 
-    username_exist = db.query(models.User).filter(models.User.username == user.username).first()
-    if username_exist is not None:
-        logger.warning(
-            "Registration failed: username already taken for username='%s'", user.username
+        sentry_sdk.init(dsn=settings.sentry_dsn, send_default_pii=False)
+    yield
+    await engine.dispose()
+
+
+app = FastAPI(title="Flunky", version="0.1.0", lifespan=lifespan)
+app.include_router(auth.router, prefix="/v1")
+app.include_router(tasks.router, prefix="/v1")
+# Keep the original API functional while clients migrate to /v1.
+app.include_router(auth.router, include_in_schema=False)
+app.include_router(tasks.router, include_in_schema=False)
+
+
+@app.middleware("http")
+async def request_context(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    request_id = str(uuid4())
+    request.state.request_id = request_id
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(request_id=request_id)
+    try:
+        response = await call_next(request)
+    except Exception:
+        structlog.get_logger().exception("request_failed")
+        response = JSONResponse(
+            {
+                "error": {
+                    "code": "internal_error",
+                    "message": "Internal server error",
+                    "request_id": request_id,
+                }
+            },
+            status_code=500,
         )
-        raise HTTPException(status_code=400, detail="Username already taken")
+    response.headers["X-Request-ID"] = request_id
+    structlog.get_logger().info(
+        "request", method=request.method, path=request.url.path, status=response.status_code
+    )
+    return response
 
-    email_exist = db.query(models.User).filter(models.User.email == user.email).first()
-    if email_exist is not None:
-        logger.warning("Registration failed: email already registered for email='%s'", user.email)
-        raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_pass = hash_password(user.password)
-
-    new_user = models.User(username=user.username, email=user.email, hashed_password=hashed_pass)
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    logger.info(
-        "User registered successfully: user_id=%s username='%s'", new_user.id, new_user.username
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    return JSONResponse(
+        {
+            "detail": exc.detail,
+            "error": {
+                "code": str(exc.status_code),
+                "message": str(exc.detail),
+                "request_id": request.state.request_id,
+            },
+        },
+        status_code=exc.status_code,
+        headers=exc.headers,
     )
 
-    return new_user
 
-
-@app.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    logger.info("Login attempt for username='%s'", form_data.username)
-
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
-
-    if user is None:
-        logger.warning("Login failed: user not found for username='%s'", form_data.username)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not verify_password(form_data.password, user.hashed_password):
-        logger.warning("Login failed: invalid password for username='%s'", form_data.username)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token = create_access_token(data={"sub": user.username})
-
-    logger.info("Login successful for user_id=%s username='%s'", user.id, user.username)
-
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.post("/tasks", response_model=schemas.TaskResponse, status_code=HTTP_201_CREATED)
-def create_task(
-    task: schemas.TaskCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    logger.info(
-        "Create task request by user_id=%s username='%s'", current_user.id, current_user.username
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Do not echo rejected input: it can include passwords or access tokens.
+    return JSONResponse(
+        {
+            "detail": "Invalid request",
+            "error": {
+                "code": "validation_error",
+                "message": "Invalid request; check the API schema",
+                "request_id": request.state.request_id,
+            },
+        },
+        status_code=422,
     )
 
-    new_task = Task(
-        title=task.task_title, description=task.task_description, user_id=current_user.id
-    )
 
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-
-    logger.info(
-        "Task created: task_id=%s user_id=%s title='%s'",
-        new_task.id,
-        current_user.id,
-        new_task.title,
-    )
-
-    return new_task
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 
-@app.get("/tasks", response_model=list[schemas.TaskResponse])
-def get_all_task(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-    completed: bool | None = None,
-):
-    logger.info(
-        "Fetch tasks request by user_id=%s username='%s' completed_filter=%s",
-        current_user.id,
-        current_user.username,
-        completed,
-    )
-
-    task_query = db.query(models.Task).filter(models.Task.user_id == current_user.id)
-    if completed is not None:
-        task_query = task_query.filter(models.Task.is_completed == completed)
-
-    tasks = task_query.all()
-
-    logger.info(
-        "Tasks fetched for user_id=%s completed_filter=%s count=%s",
-        current_user.id,
-        completed,
-        len(tasks),
-    )
-
-    return tasks
-
-
-@app.get("/tasks/{task_id}", response_model=schemas.TaskResponse)
-def get_task(
-    task_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    logger.info(
-        "Fetch single task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id
-    )
-
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
-
-    if task is None:
-        logger.warning(
-            "Task not found: task_id=%s requested_by_user_id=%s", task_id, current_user.id
+@app.get("/ready")
+async def ready() -> JSONResponse:
+    try:
+        async with SessionLocal() as db:
+            await db.execute(text("SELECT version_num FROM alembic_version"))
+        return JSONResponse({"status": "ready"})
+    except SQLAlchemyError:
+        return JSONResponse(
+            {"status": "not_ready", "message": "Database unavailable or migrations missing"},
+            status_code=503,
         )
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    if task.user_id != current_user.id:
-        logger.warning(
-            "Unauthorized task access: task_id=%s owner_user_id=%s requested_by_user_id=%s",
-            task.id,
-            task.user_id,
-            current_user.id,
-        )
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    logger.info("Task fetched successfully: task_id=%s user_id=%s", task.id, current_user.id)
-
-    return task
-
-
-@app.put("/tasks/{task_id}", response_model=schemas.TaskResponse)
-def update_task(
-    task_id: int,
-    task_update: schemas.TaskUpdate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    logger.info("Update task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id)
-
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
-
-    if task is None:
-        logger.warning(
-            "Update failed: task not found task_id=%s requested_by_user_id=%s",
-            task_id,
-            current_user.id,
-        )
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    if task.user_id != current_user.id:
-        logger.warning(
-            "Unauthorized task update: task_id=%s owner_user_id=%s requested_by_user_id=%s",
-            task.id,
-            task.user_id,
-            current_user.id,
-        )
-        raise HTTPException(status_code=403, detail="Not authorized to access this task")
-
-    if task_update.title is not None:
-        task.title = task_update.title
-
-    if task_update.description is not None:
-        task.description = task_update.description
-
-    if task_update.is_completed is not None:
-        task.is_completed = task_update.is_completed
-
-    db.commit()
-    db.refresh(task)
-
-    logger.info("Task updated successfully: task_id=%s user_id=%s", task.id, current_user.id)
-
-    return task
-
-
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(
-    task_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    logger.info("Delete task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id)
-
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
-
-    if task is None:
-        logger.warning(
-            "Delete failed: task not found task_id=%s requested_by_user_id=%s",
-            task_id,
-            current_user.id,
-        )
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    if task.user_id != current_user.id:
-        logger.warning(
-            "Unauthorized task delete: task_id=%s owner_user_id=%s requested_by_user_id=%s",
-            task.id,
-            task.user_id,
-            current_user.id,
-        )
-        raise HTTPException(status_code=403, detail="Not authorized to access this task")
-
-    db.delete(task)
-    db.commit()
-
-    logger.info("Task deleted successfully: task_id=%s user_id=%s", task.id, current_user.id)

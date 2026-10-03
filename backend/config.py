@@ -1,11 +1,9 @@
-import os
+"""Compatibility exports for the original backend imports."""
 
-from dotenv import load_dotenv
+from backend.core.config import settings
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./flunky.db")
-SQL_ECHO = os.getenv("SQL_ECHO", "False").lower() == "true"
+SECRET_KEY = settings.secret_key
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+DATABASE_URL = settings.database_url
+SQL_ECHO = settings.sql_echo
