@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
 
 
 class TaskCreate(BaseModel):
+    client_id: str | None = Field(default=None, max_length=36)
     task_title: str = Field(min_length=1, max_length=255)
     task_description: str | None = Field(default=None, max_length=10000)
     priority: Priority = "medium"

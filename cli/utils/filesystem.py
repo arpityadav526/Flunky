@@ -1,6 +1,7 @@
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / ".flunky"
+from cli.config import CONFIG_DIR as CONFIG_DIR
+
 PROJECTS_FILE = CONFIG_DIR / "projects.json"
 
 

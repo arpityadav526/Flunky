@@ -32,9 +32,12 @@ def _request(
 ) -> Any:
     try:
         with httpx.Client(timeout=TIMEOUT, transport=httpx.HTTPTransport(retries=2)) as client:
+            from cli.settings import api_url
+
+            url = api_url()
             response = client.request(
                 method,
-                f"{BASE_URL}{path}",
+                f"{url}{path}",
                 headers=get_auth_headers(token) if token else {},
                 json=payload,
                 data=form,
@@ -62,7 +65,32 @@ def _request(
     if response.status_code == 204 or not response.content:
         return None
     try:
-        return response.json()
+        body = response.json()
+        from pydantic import TypeAdapter
+
+        from cli.models import Device, Task, Token, User
+
+        model: Any = None
+        if path.endswith("/login") or path.endswith("/refresh") or path.endswith("/device/token"):
+            model = Token
+        elif path.endswith("/register") or path.endswith("/auth/me"):
+            model = User
+        elif path.endswith("/auth/device"):
+            model = Device
+        elif "/tasks" in path and "/bulk/" not in path:
+            model = list[Task] if isinstance(body, list) else Task
+        return (
+            TypeAdapter(model).validate_python(body).model_dump(mode="json", exclude_unset=True)
+            if model and not isinstance(body, list)
+            else (
+                [
+                    item.model_dump(mode="json", exclude_unset=True)
+                    for item in TypeAdapter(model).validate_python(body)
+                ]
+                if model
+                else body
+            )
+        )
     except ValueError:
         raise APIError("Server returned invalid JSON. Check the server version.") from None
 

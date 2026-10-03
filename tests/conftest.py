@@ -39,7 +39,7 @@ def client(tmp_path) -> Iterator[TestClient]:
 
 
 @pytest.fixture(autouse=True)
-def isolate_auth_services(monkeypatch):
+def isolate_auth_services(monkeypatch, tmp_path):
     from unittest.mock import Mock
 
     from backend.core import mail, rate_limit
@@ -48,4 +48,5 @@ def isolate_auth_services(monkeypatch):
     mailbox = Mock()
     monkeypatch.setattr(mail, "mailer", mailbox)
     monkeypatch.setenv("FLUNKY_TOKEN_STORAGE", "file")
+    monkeypatch.setenv("FLUNKY_DATA_DIR", str(tmp_path / "data"))
     return mailbox

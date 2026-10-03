@@ -145,7 +145,7 @@ def test_migrations_upgrade_downgrade_and_legacy_data(tmp_path):
             "medium",
             "[]",
         )
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0003"
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "0004"
     migrate("downgrade", "0001")
     migrate("upgrade", "head")
     migrate("downgrade", "base")

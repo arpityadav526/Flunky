@@ -1,0 +1,51 @@
+                                                                                
+ Usage: flunky [OPTIONS] COMMAND [ARGS]...                                      
+                                                                                
+ FLUNKY - Developer Productivity CLI                                            
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --json                        Machine-readable JSON                          │
+│ --quiet                       Suppress normal output                         │
+│ --no-color                    Disable color                                  │
+│ --yes                         Confirm prompts                                │
+│ --debug                       Show tracebacks                                │
+│ --version                     Show version                                   │
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ register                                                                     │
+│ login       Sign in via browser. Scripts: flunky login --with-password -u    │
+│             alice --password-stdin.                                          │
+│ logout      Revoke the current session on the server and remove local        │
+│             credentials.                                                     │
+│ add         Quick-add a task. Example: flunky add 'fix login' -p high -d     │
+│             tomorrow -t backend.                                             │
+│ list        Find tasks. Example: flunky list --search login --completed      │
+│             false --sort=-priority.                                          │
+│ today       Show tasks due today. Example: flunky today --json.              │
+│ upcoming    Show future tasks. Example: flunky upcoming.                     │
+│ show        Inspect a task or choose one. Example: flunky show 42.           │
+│ done        Complete a task. Example: flunky done 42.                        │
+│ edit        Edit task fields. Example: flunky edit 42 --title 'ship release' │
+│             -p high.                                                         │
+│ rm          Soft-delete a task. Example: flunky rm 42 --yes; flunky undo     │
+│             restores it.                                                     │
+│ undo        Undo the last deletion or edit. Example: flunky undo.            │
+│ sync        Send queued offline changes in order. Example: flunky sync       │
+│             --json.                                                          │
+│ doctor      Check installation, backend, auth and terminal. Example: flunky  │
+│             doctor --json.                                                   │
+│ tui         Open the full-screen task board. Example: flunky tui (q to       │
+│             quit).                                                           │
+│ task        Commands for task management                                     │
+│ projects    Commands for project shortcuts                                   │
+│ init        Commands for project scaffolding                                 │
+│ config      Settings and profiles. Example: flunky config list.              │
+│ completion  Shell completion. Example: flunky completion install zsh.        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Global flags (before or after a command): --json --quiet --no-color --yes --debug
+

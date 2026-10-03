@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base as Base
@@ -22,6 +22,8 @@ class User(Base):
 
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = (UniqueConstraint("user_id", "client_id", name="uq_task_client_id"),)
+    client_id: Mapped[str | None] = mapped_column(String(36))
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255))

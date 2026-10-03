@@ -13,7 +13,9 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 
 
 def server_url() -> str:
-    return os.environ.get("FLUNKY_API_URL", "http://localhost:8000").rstrip("/")
+    from cli.settings import api_url
+
+    return api_url()
 
 
 def _keyring_service() -> str:

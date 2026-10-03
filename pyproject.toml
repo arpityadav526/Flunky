@@ -9,7 +9,7 @@ description = "Developer tasks and project scaffolding from your terminal"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "typer>=0.16,<1",
+  "typer>=0.27,<0.28",
   "rich>=14,<15",
   "questionary>=2.1,<3",
   "jinja2>=3.1.6,<4",
@@ -33,6 +33,9 @@ dependencies = [
   "pwdlib[argon2,bcrypt]>=0.3,<1",
   "pyjwt>=2.10,<3",
   "keyring>=25,<27",
+  "textual>=1,<7",
+  "dateparser>=1.2,<2",
+  "orjson>=3.10,<4",
 ]
 
 [project.optional-dependencies]
@@ -52,10 +55,11 @@ dev = [
     "build>=1",
     "pip-audit>=2",
     "vulture>=2",
+    "types-dateparser>=1.4.3.20260907",
 ]
 
 [project.scripts]
-flunky = "cli.main:app"
+flunky = "cli.entry:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["cli", "backend"]

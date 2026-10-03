@@ -1,18 +1,6 @@
-from rich.console import Console
-from rich.theme import Theme
+"""Compatibility exports for the shared design system."""
 
-# Define the custom theme for Flunky CLI
-custom_theme = Theme(
-    {
-        "info": "cyan",
-        "warning": "yellow",
-        "error": "bold red",
-        "success": "bold green",
-        "prompt": "magenta",
-        "highlight": "bold magenta",
-        "banner": "bold cyan",
-    }
-)
+from cli.ui import THEME as custom_theme
+from cli.ui import console
 
-# Create a globally available console instance with the theme
-console = Console(theme=custom_theme)
+__all__ = ["custom_theme", "console"]

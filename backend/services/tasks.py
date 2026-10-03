@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models import Task
@@ -8,12 +10,28 @@ from backend.schemas import TaskCreate, TaskUpdate
 
 
 async def create(db: AsyncSession, user_id: int, value: TaskCreate) -> Task:
+    if value.client_id:
+        existing: Task | None = await db.scalar(
+            select(Task).where(Task.user_id == user_id, Task.client_id == value.client_id)
+        )
+        if existing is not None:
+            return existing
     fields = value.model_dump(exclude={"task_title", "task_description"})
     task = Task(
         user_id=user_id, title=value.task_title, description=value.task_description, **fields
     )
     db.add(task)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        if value.client_id:
+            existing = await db.scalar(
+                select(Task).where(Task.user_id == user_id, Task.client_id == value.client_id)
+            )
+            if existing is not None:
+                return existing
+        raise
     await db.refresh(task)
     return task
 

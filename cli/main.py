@@ -1,8 +1,10 @@
-import questionary
+from typing import Any
+
 import typer
 from rich.panel import Panel
 from rich.table import Table
 
+from cli import ui
 from cli.api_client import (
     delete_task as api_delete_task,
 )
@@ -18,6 +20,7 @@ from cli.api_client import (
 from cli.api_client import (
     update_task as api_update_task,
 )
+from cli.commands import register_commands
 from cli.config import (
     delete_token,
     get_logged_in_username,
@@ -31,6 +34,8 @@ from cli.services.projects import (
     list_projects,
     remove_project,
 )
+from cli.ui.commands import FlunkyGroup
+from cli.ui.prompts import questionary
 from cli.ui_theme import console
 from cli.utils import validators
 
@@ -47,10 +52,15 @@ STACK_ICONS = {
     "electron": "🖥️",
 }
 
-app = typer.Typer(help="[bold blue]FLUNKY[/bold blue] - [green]Developer Productivity CLI[/green]")
-task_app = typer.Typer(help="[yellow]Commands for task management[/yellow]")
-projects_app = typer.Typer(help="[magenta]Commands for project shortcuts[/magenta]")
-init_app = typer.Typer(help="[cyan]Commands for project scaffolding[/cyan]")
+app = typer.Typer(
+    cls=FlunkyGroup,
+    help="[bold blue]FLUNKY[/bold blue] - [green]Developer Productivity CLI[/green]",
+)
+task_app = typer.Typer(cls=FlunkyGroup, help="[yellow]Commands for task management[/yellow]")
+projects_app = typer.Typer(
+    cls=FlunkyGroup, help="[magenta]Commands for project shortcuts[/magenta]"
+)
+init_app = typer.Typer(cls=FlunkyGroup, help="[cyan]Commands for project scaffolding[/cyan]")
 
 app.add_typer(task_app, name="task")
 app.add_typer(projects_app, name="projects")
@@ -90,6 +100,8 @@ def create_project(
             )
         )
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(Panel(f"[red]{e}[/red]", title="❌ Error", border_style="red"))
         raise typer.Exit(1) from None
 
@@ -133,10 +145,13 @@ def register():
     with console.status("[bold green]Registering..."):
         try:
             user = register_user(username, email, password)
+            ui.state.data = {"user": user}
             console.print(
                 f"✅ Registration successful. Welcome, {user['username']}!", style="green"
             )
         except Exception as e:
+            if ui.state.debug:
+                raise
             msg = str(e)
             if "already exists" in msg:
                 console.print("[red]Username or email already registered.[/red]")
@@ -203,6 +218,7 @@ def login(
             else:
                 raise APIError("Device code expired. Run `flunky login` again.")
         save_token(result["access_token"], result.get("refresh_token"))
+        ui.state.data = {"authenticated": True}
         console.print("Login successful.", style="success")
     except (APIError, OSError) as error:
         console.print(f"Login failed: {error}", style="error")
@@ -234,6 +250,7 @@ def logout(
             )
             raise typer.Exit(1) from None
     delete_token()
+    ui.state.data = {"authenticated": False}
     console.print("Logged out successfully!", style="success")
 
 
@@ -261,9 +278,12 @@ def create_task_command(
         token = load_token()
         assert token is not None
         task = api_task_create(title, description, token)
+        ui.state.data = task
         console.print("✅ Task created successfully!", style="green")
         console.print(f"ID: {task['id']} | Title: {task['title']}", style="cyan")
     except Exception as e:
+        if ui.state.debug:
+            raise
         msg = str(e)
         if "expired" in msg or "token" in msg:
             console.print("[red]Session expired. Please login again.[/red]")
@@ -285,6 +305,7 @@ def list_task(
         token = load_token()
         assert token is not None
         tasks = get_all_task(token, completed=completed)
+        ui.state.data = tasks
 
         if not tasks:
             console.print("📭 No tasks found!", style="yellow")
@@ -311,6 +332,8 @@ def list_task(
         console.print(f"\nTotal: {len(tasks)} task(s)", style="dim")
 
     except Exception as e:
+        if ui.state.debug:
+            raise
         msg = str(e)
         if "expired" in msg or "token" in msg:
             console.print("[red]Session expired. Please login again.[/red]")
@@ -330,6 +353,7 @@ def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
         token = load_token()
         assert token is not None
         task = get_task_by_id(task_id, token)
+        ui.state.data = task
 
         status = "✅ Completed" if task["is_completed"] else "⏳ Pending"
         status_color = "green" if task["is_completed"] else "yellow"
@@ -343,6 +367,8 @@ def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
 """
         console.print(Panel(details.strip(), title="📝 Task Details", border_style="cyan"))
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(f"❌ Failed to get task: {e}", style="red")
 
         raise typer.Exit(1) from None
@@ -399,6 +425,8 @@ def update_task_command(
         console.print("✅ Task updated successfully!", style="green")
         console.print(f"Title: {updated_task['title']}", style="cyan")
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(f"❌ Failed to update task: {e}", style="red")
 
         raise typer.Exit(1) from None
@@ -416,6 +444,8 @@ def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as co
         updated_task = api_update_task(task_id, token, is_completed=True)
         console.print(f"✅ Task '{updated_task['title']}' marked as complete!", style="green")
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(f"❌ Failed to complete task: {e!s}", style="red")
 
         raise typer.Exit(1) from None
@@ -434,6 +464,7 @@ def delete_task_command(
         token = load_token()
         assert token is not None
         task = get_task_by_id(task_id, token)
+        ui.state.data = task
 
         if not force:
             if not questionary.confirm(f"⚠️ Delete '{task['title']}'?", default=False).ask():
@@ -441,8 +472,11 @@ def delete_task_command(
                 return
 
         api_delete_task(task_id, token)
+        ui.state.data = {"deleted": task_id}
         console.print("🗑️ Task deleted successfully!", style="green")
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(f"❌ Failed to delete task: {e}", style="red")
 
         raise typer.Exit(1) from None
@@ -456,6 +490,8 @@ def add_project_command(name: str, path: str):
             f"✅ Added project '[bold]{project_name}[/bold]' → {project_path}", style="green"
         )
     except Exception as e:
+        if ui.state.debug:
+            raise
         msg = str(e)
         if "invalid" in msg:
             console.print(f"[red]Invalid project name or path: {msg}")
@@ -469,6 +505,7 @@ def add_project_command(name: str, path: str):
 def list_projects_command():
     try:
         projects = list_projects()
+        ui.state.data = projects
 
         if not projects:
             console.print(
@@ -490,6 +527,8 @@ def list_projects_command():
 
         console.print(table)
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
         raise typer.Exit(1) from None
@@ -501,6 +540,8 @@ def remove_project_command(name: str):
         removed = remove_project(name)
         console.print(f"🗑️ Removed project '[bold]{removed}[/bold]'", style="green")
     except Exception as e:
+        if ui.state.debug:
+            raise
         console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
         raise typer.Exit(1) from None
@@ -509,6 +550,11 @@ def remove_project_command(name: str):
 @app.callback(invoke_without_command=True)
 def main_callback(
     ctx: typer.Context,
+    json_output: bool = typer.Option(False, "--json", help="Machine-readable JSON"),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress normal output"),
+    no_color: bool = typer.Option(False, "--no-color", help="Disable color"),
+    yes: bool = typer.Option(False, "--yes", help="Confirm prompts"),
+    debug: bool = typer.Option(False, "--debug", help="Show tracebacks"),
     version: bool = typer.Option(False, "--version", is_eager=True, help="Show version"),
 ):
     """
@@ -519,6 +565,10 @@ def main_callback(
 
         console.print(f"flunky {package_version('flunky')}")
         raise typer.Exit()
+
+    from cli.updatecheck import notify
+
+    notify()
 
     if ctx.invoked_subcommand is not None:
         return
@@ -557,7 +607,38 @@ def main_callback(
         expand=False,
     )
     console.print(welcome_panel)
+    dashboard: dict[str, Any] = {
+        "username": username,
+        "authenticated": bool(username),
+        "today": [],
+        "overdue": 0,
+    }
+    if username:
+        try:
+            from datetime import date
 
+            from cli.offline import list_tasks as dashboard_tasks
+
+            rows, cached = dashboard_tasks(completed=False, limit=100)
+            today = date.today().isoformat()
+            dashboard.update(
+                today=[row for row in rows if row.get("due_date") == today],
+                overdue=sum(1 for row in rows if row.get("due_date") and row["due_date"] < today),
+                offline=cached,
+            )
+            console.print(
+                f"Today: {len(dashboard['today'])} tasks · Overdue: {dashboard['overdue']}"
+                + (" · offline" if cached else "")
+            )
+        except Exception:
+            dashboard["offline"] = True
+            console.print(
+                "Tasks unavailable. Run `flunky doctor` to check the backend.", style="warning"
+            )
+    ui.state.data = dashboard
+
+
+register_commands(app)
 
 if __name__ == "__main__":
     app()
