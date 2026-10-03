@@ -1,0 +1,18 @@
+import typer
+
+app = typer.Typer()
+
+
+def greet(name: str) -> str:
+    if not name.strip():
+        raise ValueError("Name must not be empty")
+    return f"Hello, {name.strip()}!"
+
+
+@app.command()
+def hello(name: str = "world") -> None:
+    typer.echo(greet(name))
+
+
+def main() -> None:
+    app()

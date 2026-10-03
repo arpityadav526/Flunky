@@ -1,0 +1,30 @@
+{
+  "name": "{{ project_name }}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "lint": "eslint src/greeting.mjs tests/*.mjs",
+    "typecheck": "tsc --noEmit",
+    "dev": "expo start",
+    "start": "expo start",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "expo": "~55.0.0",
+    "react": "19.2.0",
+    "react-native": "0.83.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "@types/react": "^19.2.0"
+  },
+  "main": "index.js"
+}

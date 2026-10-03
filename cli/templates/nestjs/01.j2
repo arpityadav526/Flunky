@@ -1,0 +1,6 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { greet } from '../src/greeting.mjs';
+
+test('greeting trims names', () => assert.equal(greet(' Ada '), 'Hello, Ada!'));
+test('blank names are rejected', () => assert.throws(() => greet(' ')));

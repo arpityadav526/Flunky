@@ -1,12 +1,77 @@
 {
+  "schema_version": 1,
+  "version": "1.0.0",
   "name": "react-native",
-  "description": "React Native mobile app starter (iOS/Android)",
-  "dependencies": [],
-  "post_create": [
-    "npx react-native init {{ project_name }}"
-  ],
+  "description": "react-native application",
   "files": [
-    {"src": "README.md.j2", "dest": "README.md"},
-    {"src": ".gitignore.j2", "dest": ".gitignore"}
+    {
+      "src": "00.j2",
+      "dest": "src/greeting.mjs"
+    },
+    {
+      "src": "01.j2",
+      "dest": "tests/greeting.test.mjs"
+    },
+    {
+      "src": "02.j2",
+      "dest": ".gitignore"
+    },
+    {
+      "src": "03.j2",
+      "dest": "README.md"
+    },
+    {
+      "src": "04.j2",
+      "dest": ".nvmrc"
+    },
+    {
+      "src": "05.j2",
+      "dest": ".npmrc"
+    },
+    {
+      "src": "06.j2",
+      "dest": "tsconfig.json"
+    },
+    {
+      "src": "07.j2",
+      "dest": "eslint.config.mjs"
+    },
+    {
+      "src": "08.j2",
+      "dest": ".dockerignore"
+    },
+    {
+      "src": "09.j2",
+      "dest": "Dockerfile"
+    },
+    {
+      "src": "10.j2",
+      "dest": "index.js"
+    },
+    {
+      "src": "11.j2",
+      "dest": "App.tsx"
+    },
+    {
+      "src": "12.j2",
+      "dest": "app.json"
+    },
+    {
+      "src": "13.j2",
+      "dest": "package.json"
+    }
+  ],
+  "post_create": [
+    {
+      "argv": [
+        "npm",
+        "install"
+      ]
+    }
+  ],
+  "next_steps": [
+    "npm install",
+    "npm test",
+    "npm run build"
   ]
 }

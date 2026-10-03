@@ -1,12 +1,47 @@
 {
+  "schema_version": 1,
+  "version": "1.0.0",
   "name": "flutter",
-  "description": "Flutter mobile app starter (iOS/Android)",
-  "dependencies": [],
-  "post_create": [
-    "flutter create {{ project_name }}"
-  ],
+  "description": "Flutter application with tested widget entry point",
   "files": [
-    {"src": "README.md.j2", "dest": "README.md"},
-    {"src": ".gitignore.j2", "dest": ".gitignore"}
+    {
+      "src": "00.j2",
+      "dest": "pubspec.yaml"
+    },
+    {
+      "src": "01.j2",
+      "dest": "lib/main.dart"
+    },
+    {
+      "src": "02.j2",
+      "dest": "test/widget_test.dart"
+    },
+    {
+      "src": "03.j2",
+      "dest": "analysis_options.yaml"
+    },
+    {
+      "src": "04.j2",
+      "dest": "README.md"
+    },
+    {
+      "src": "05.j2",
+      "dest": ".gitignore"
+    }
+  ],
+  "post_create": [
+    {
+      "argv": [
+        "flutter",
+        "pub",
+        "get"
+      ]
+    }
+  ],
+  "next_steps": [
+    "flutter create --platforms=android,ios,web .",
+    "flutter pub get",
+    "flutter analyze",
+    "flutter test"
   ]
 }

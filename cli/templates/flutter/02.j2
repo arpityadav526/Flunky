@@ -1,0 +1,3 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{ package_name }}/main.dart';
+void main() { testWidgets('shows the project name', (tester) async { await tester.pumpWidget(const StarterApp()); expect(find.text('{{ project_name }}'), findsOneWidget); }); }

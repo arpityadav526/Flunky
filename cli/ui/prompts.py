@@ -22,6 +22,9 @@ class Prompt:
 
 
 class Prompts:
+    def select(self, *args: Any, **kwargs: Any) -> Prompt:
+        return Prompt("select", args, kwargs)
+
     def text(self, *args: Any, **kwargs: Any) -> Prompt:
         return Prompt("text", args, kwargs)
 

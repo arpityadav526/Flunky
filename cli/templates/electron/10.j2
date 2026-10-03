@@ -1,0 +1,11 @@
+const { app, BrowserWindow } = require('electron');
+const path = require('node:path');
+function openWindow() {
+  const window = new BrowserWindow({ width: 1000, height: 700, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  window.loadFile(path.join(__dirname, '../index.html'));
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  window.webContents.on('will-navigate', event => event.preventDefault());
+}
+app.whenReady().then(openWindow);
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) openWindow(); });

@@ -25,3 +25,8 @@
 - M4: Pin Typer to 0.27 because its Click implementation and completion APIs are vendored; isolate compatibility code in cli/ui/commands.py.
 - M4: The host repeatedly marks editable-install .pth files UF_HIDDEN, which CPython skips; measure and verify regular wheel/source installs, not the broken host editable environment.
 - M4: Shared-runner CI startup budget is 500ms; the measured target on the local M3 Mac remains 150ms.
+- M5: Keep sandboxed Jinja with versioned Pydantic manifests; Copier's Git/answers-based three-way updates are useful but exceed the deliberately additive, never-overwrite `structure apply` contract (https://copier.readthedocs.io/en/stable/updating/).
+- M5: Dependency installation is opt-in; user-template hooks additionally require `--trust-template`, use argument arrays, checked exit codes and bounded timeouts.
+- M5: MIT and UNLICENSED are the initial license choices; linting, tests and CI are baseline features even when their add-on names are omitted.
+- M5: Fullstack composes the selected stack with Next.js or FastAPI; CLI layout adds a Python CLI beside non-CLI stack code, and library layout isolates the stack under packages/.
+- M5: The auth add-on is an explicit integration guide, not a claim of implemented authentication; mobile native wrappers and signing remain platform SDK steps.

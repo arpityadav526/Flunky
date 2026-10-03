@@ -249,7 +249,9 @@ def test_empty_list(respx_mock):
 
 def test_scaffold_commands(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(main.scaffold.subprocess, "run", Mock())
+    from cli.services import scaffold
+
+    monkeypatch.setattr(scaffold.subprocess, "run", Mock())
     assert runner.invoke(main.app, ["init", "create", "python", "demo"]).exit_code == 0
     assert (tmp_path / "demo" / "main.py").is_file()
     assert runner.invoke(main.app, ["init", "create", "missing", "demo"]).exit_code == 1

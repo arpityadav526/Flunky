@@ -5,6 +5,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from cli import ui
+from cli.ai import app as ai_app
 from cli.api_client import (
     delete_task as api_delete_task,
 )
@@ -20,6 +21,7 @@ from cli.api_client import (
 from cli.api_client import (
     update_task as api_update_task,
 )
+from cli.blueprints.commands import register_blueprints
 from cli.commands import register_commands
 from cli.config import (
     delete_token,
@@ -28,7 +30,6 @@ from cli.config import (
     load_token,
     save_token,
 )
-from cli.services import scaffold
 from cli.services.projects import (
     add_project,
     list_projects,
@@ -37,20 +38,6 @@ from cli.services.projects import (
 from cli.ui.commands import FlunkyGroup
 from cli.ui.prompts import questionary
 from cli.ui_theme import console
-from cli.utils import validators
-
-STACK_ICONS = {
-    "fastapi": "⚡",
-    "mern": "🌱",
-    "cli": "💻",
-    "python": "🐍",
-    "ds": "📊",
-    "react-native": "📱",
-    "flutter": "🦋",
-    "nextjs": "⏭️",
-    "nestjs": "🚀",
-    "electron": "🖥️",
-}
 
 app = typer.Typer(
     cls=FlunkyGroup,
@@ -60,50 +47,12 @@ task_app = typer.Typer(cls=FlunkyGroup, help="[yellow]Commands for task manageme
 projects_app = typer.Typer(
     cls=FlunkyGroup, help="[magenta]Commands for project shortcuts[/magenta]"
 )
-init_app = typer.Typer(cls=FlunkyGroup, help="[cyan]Commands for project scaffolding[/cyan]")
 
 app.add_typer(task_app, name="task")
 app.add_typer(projects_app, name="projects")
-app.add_typer(init_app, name="init")
+register_blueprints(app)
 
-
-# console is imported from cli.ui_theme
-# --- Project Scaffolding ---
-@init_app.command("create")
-def create_project(
-    project_type: str = typer.Argument(
-        ..., help="Type of project to create (e.g. fastapi, mern, cli, ds, nextjs, etc.)"
-    ),
-    project_name: str = typer.Argument(..., help="Name of the new project"),
-):
-    """Create a new project from a template."""
-    icon = STACK_ICONS.get(project_type, "📦")
-    if not validators.is_valid_project_name(project_name):
-        console.print(
-            Panel(
-                f"[red]Invalid project name: {project_name}[/red]",
-                title="❌ Error",
-                border_style="red",
-            )
-        )
-        raise typer.Exit(1)
-    try:
-        with console.status(
-            f"[bold green]Scaffolding {icon} {project_type} project...[/bold green]"
-        ):
-            path = scaffold.scaffold_project(project_type, project_name)
-        console.print(
-            Panel(
-                f"{icon} [green]Project created at [bold]{path}[/bold][/green]",
-                title="✅ Success",
-                border_style="green",
-            )
-        )
-    except Exception as e:
-        if ui.state.debug:
-            raise
-        console.print(Panel(f"[red]{e}[/red]", title="❌ Error", border_style="red"))
-        raise typer.Exit(1) from None
+app.add_typer(ai_app, name="ai", hidden=True)
 
 
 @app.command()

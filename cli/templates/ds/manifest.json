@@ -1,14 +1,79 @@
 {
+  "schema_version": 1,
+  "version": "1.0.0",
   "name": "ds",
-  "description": "Data Science starter template (Jupyter, pandas, numpy)",
-  "dependencies": ["jupyter", "pandas", "numpy"],
-  "post_create": [
-    "python -m venv venv",
-    "venv/bin/pip install jupyter pandas numpy"
-  ],
+  "description": "ds Python project",
   "files": [
-    {"src": "notebook.ipynb.j2", "dest": "notebook.ipynb"},
-    {"src": "README.md.j2", "dest": "README.md"},
-    {"src": ".gitignore.j2", "dest": ".gitignore"}
+    {
+      "src": "00.j2",
+      "dest": "pyproject.toml"
+    },
+    {
+      "src": "01.j2",
+      "dest": "src/{{ package_name }}/__init__.py"
+    },
+    {
+      "src": "02.j2",
+      "dest": "src/{{ package_name }}/__main__.py"
+    },
+    {
+      "src": "03.j2",
+      "dest": "main.py"
+    },
+    {
+      "src": "04.j2",
+      "dest": "README.md"
+    },
+    {
+      "src": "05.j2",
+      "dest": ".python-version"
+    },
+    {
+      "src": "06.j2",
+      "dest": "pytest.ini"
+    },
+    {
+      "src": "07.j2",
+      "dest": "ruff.toml"
+    },
+    {
+      "src": "08.j2",
+      "dest": ".gitignore"
+    },
+    {
+      "src": "09.j2",
+      "dest": "tests/test_greeting.py"
+    },
+    {
+      "src": "10.j2",
+      "dest": "Dockerfile"
+    },
+    {
+      "src": "11.j2",
+      "dest": ".dockerignore"
+    },
+    {
+      "src": "12.j2",
+      "dest": "notebooks/exploration.ipynb"
+    },
+    {
+      "src": "13.j2",
+      "dest": "data/README.md"
+    }
+  ],
+  "post_create": [
+    {
+      "argv": [
+        "uv",
+        "sync",
+        "--extra",
+        "dev"
+      ]
+    }
+  ],
+  "next_steps": [
+    "uv sync --extra dev",
+    "uv run pytest",
+    "uv run ruff check ."
   ]
 }

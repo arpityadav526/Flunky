@@ -1,0 +1,3 @@
+import { createRoot } from 'react-dom/client';
+import { greet } from './greeting.mjs';
+createRoot(document.getElementById('root')!).render(<main><h1>{{ project_name }}</h1><p>{greet('world')}</p></main>);

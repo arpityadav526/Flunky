@@ -48,3 +48,11 @@
 - VHS recorded docs/demos/cli.gif in a real zsh PTY. Inspected a rendered frame; it displays successful installed-CLI help. Recording exposed and fixed a missing packaging dependency.
 - Root help is generated, not manually duplicated. The installed-wheel surface will be rechecked in M7.
 - Final M4 run: 119 passed, 92.66% coverage, all snapshots passed.
+
+## M5 — layered project blueprints
+
+- Ruff lint/format and mypy passed (47 modules).
+- Full suite: 623 passed, 92.44% coverage, three snapshots passed; includes 500 stack/layout/add-on combinations and path/symlink/overwrite/hook-trust regression tests.
+- Built wheel and sdist; reinstalled package and ran the documented fullstack init dry run through the installed CLI.
+- Generated all ten standalone stacks into isolated /tmp directories. Python, CLI, FastAPI and data-science projects passed uv installation, pytest and ruff. Next.js, MERN, NestJS, Electron and Expo passed npm installation, tests, lint and build; MERN also passed typecheck. Flutter passed pub get, analyze and widget tests.
+- This verifies build/test entry points, not native signing, app-store packaging, desktop visual behavior or production deployment. Generated auth is guidance only; library layouts retain the selected stack's application semantics.

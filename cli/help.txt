@@ -16,6 +16,8 @@
 │ --help                        Show this message and exit.                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ init        Generate a project. Example: flunky init demo --stack fastapi    │
+│             --type fullstack --yes.                                          │
 │ register    Create an account. Example: flunky register -u alice --email     │
 │             a@example.com --password-stdin.                                  │
 │ login       Sign in via browser. Scripts: flunky login --with-password -u    │
@@ -43,7 +45,7 @@
 │             quit).                                                           │
 │ task        Commands for task management                                     │
 │ projects    Commands for project shortcuts                                   │
-│ init        Commands for project scaffolding                                 │
+│ structure   Apply project standards. Example: flunky structure apply . --yes │
 │ config      Settings and profiles. Example: flunky config list.              │
 │ completion  Shell completion. Example: flunky completion install zsh.        │
 ╰──────────────────────────────────────────────────────────────────────────────╯

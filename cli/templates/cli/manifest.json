@@ -1,14 +1,71 @@
 {
+  "schema_version": 1,
+  "version": "1.0.0",
   "name": "cli",
-  "description": "Python CLI starter template (Typer)",
-  "dependencies": ["typer", "rich"],
-  "post_create": [
-    "python -m venv venv",
-    "venv/bin/pip install typer rich"
-  ],
+  "description": "cli Python project",
   "files": [
-    {"src": "main.py.j2", "dest": "main.py"},
-    {"src": "README.md.j2", "dest": "README.md"},
-    {"src": ".gitignore.j2", "dest": ".gitignore"}
+    {
+      "src": "00.j2",
+      "dest": "pyproject.toml"
+    },
+    {
+      "src": "01.j2",
+      "dest": "src/{{ package_name }}/__init__.py"
+    },
+    {
+      "src": "02.j2",
+      "dest": "src/{{ package_name }}/__main__.py"
+    },
+    {
+      "src": "03.j2",
+      "dest": "main.py"
+    },
+    {
+      "src": "04.j2",
+      "dest": "README.md"
+    },
+    {
+      "src": "05.j2",
+      "dest": ".python-version"
+    },
+    {
+      "src": "06.j2",
+      "dest": "pytest.ini"
+    },
+    {
+      "src": "07.j2",
+      "dest": "ruff.toml"
+    },
+    {
+      "src": "08.j2",
+      "dest": ".gitignore"
+    },
+    {
+      "src": "09.j2",
+      "dest": "tests/test_greeting.py"
+    },
+    {
+      "src": "10.j2",
+      "dest": "Dockerfile"
+    },
+    {
+      "src": "11.j2",
+      "dest": ".dockerignore"
+    }
+  ],
+  "post_create": [
+    {
+      "argv": [
+        "uv",
+        "sync",
+        "--extra",
+        "dev"
+      ]
+    }
+  ],
+  "next_steps": [
+    "uv sync --extra dev",
+    "uv run pytest",
+    "uv run ruff check ."
   ]
 }
