@@ -106,7 +106,11 @@ async def health() -> dict[str, str]:
 async def ready() -> JSONResponse:
     try:
         async with SessionLocal() as db:
-            await db.execute(text("SELECT version_num FROM alembic_version"))
+            revision = await db.scalar(text("SELECT version_num FROM alembic_version"))
+            if revision != "0004":
+                return JSONResponse(
+                    {"status": "not_ready", "message": "Run alembic upgrade head"}, status_code=503
+                )
         return JSONResponse({"status": "ready"})
     except SQLAlchemyError:
         return JSONResponse(

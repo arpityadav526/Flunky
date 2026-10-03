@@ -1,0 +1,110 @@
+PASS flunky --help
+PASS flunky init --help
+PASS flunky register --help
+PASS flunky login --help
+PASS flunky logout --help
+PASS flunky add --help
+PASS flunky list --help
+PASS flunky today --help
+PASS flunky upcoming --help
+PASS flunky show --help
+PASS flunky done --help
+PASS flunky edit --help
+PASS flunky rm --help
+PASS flunky undo --help
+PASS flunky sync --help
+PASS flunky doctor --help
+PASS flunky tui --help
+PASS flunky task --help
+PASS flunky task create --help
+PASS flunky task list --help
+PASS flunky task show --help
+PASS flunky task update --help
+PASS flunky task complete --help
+PASS flunky task delete --help
+PASS flunky projects --help
+PASS flunky projects add --help
+PASS flunky projects list --help
+PASS flunky projects remove --help
+PASS flunky structure --help
+PASS flunky structure apply --help
+PASS flunky ai --help
+PASS flunky config --help
+PASS flunky config list --help
+PASS flunky config get --help
+PASS flunky config set --help
+PASS flunky config profile --help
+PASS flunky completion --help
+PASS flunky completion install --help
+PASS flunky --version
+PASS flunky
+PASS flunky ai
+PASS flunky tui
+PASS flunky add unauthenticated
+PASS flunky config profile staging
+PASS flunky config set api_url http://127.0.0.1:61133
+PASS flunky config profile prod
+PASS flunky config set api_url http://127.0.0.1:61133
+PASS flunky config profile local
+PASS flunky config set api_url http://127.0.0.1:61133
+PASS flunky config set theme high-contrast
+PASS flunky config get theme
+PASS flunky config list
+PASS flunky config get missing
+PASS flunky completion install zsh --path /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/completion.zsh
+PASS flunky completion install bash --path /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/completion.bash
+PASS flunky completion install fish --path /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/completion.fish
+PASS flunky completion install powershell --path /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/completion.powershell
+PASS flunky completion install pwsh --path /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/completion.pwsh
+PASS flunky init project-python --stack python --yes
+PASS flunky init project-cli --stack cli --yes
+PASS flunky init project-fastapi --stack fastapi --yes
+PASS flunky init project-ds --stack ds --yes
+PASS flunky init project-nextjs --stack nextjs --yes
+PASS flunky init project-mern --stack mern --yes
+PASS flunky init project-nestjs --stack nestjs --yes
+PASS flunky init project-electron --stack electron --yes
+PASS flunky init project-react-native --stack react-native --yes
+PASS flunky init project-flutter --stack flutter --yes
+PASS flunky init fullstack --stack fastapi --type fullstack --addons docker,ci --dry-run
+PASS flunky init create python legacy
+PASS flunky structure apply legacy --dry-run
+PASS flunky structure apply legacy --yes
+PASS flunky projects add demo /var/folders/zb/cmj7dmkn431g2wdr2y_lnrww0000gn/T/flunky-surface-u7irt0qp/legacy
+PASS flunky projects list
+PASS flunky projects remove demo
+PASS flunky projects remove demo
+PASS flunky register --username surface --email surface@example.com --password-stdin
+PASS flunky login --with-password --username surface --password-stdin
+PASS flunky doctor
+PASS flunky task create -t Legacy task -d description
+PASS flunky task update 1 --title Updated legacy
+PASS flunky task complete 1
+PASS flunky task show 1
+PASS flunky task list --completed
+PASS flunky task delete 1 --force
+PASS flunky task delete 1 --force
+PASS flunky add Quick task -p high -d tomorrow -t backend
+PASS flunky list --priority high --tag backend --search Quick --sort=-priority
+PASS flunky today
+PASS flunky upcoming
+PASS flunky edit 2 --title Edited quick task --notes verified
+PASS flunky done 2
+PASS flunky show 2
+PASS flunky undo
+PASS flunky show 2
+PASS flunky rm 2 --yes
+PASS flunky undo
+PASS flunky show 2
+PASS flunky sync
+PASS flunky
+PASS flunky add Offline task
+PASS flunky done -- -1
+PASS flunky list
+PASS flunky sync
+PASS flunky list --search Offline task
+PASS flunky logout --everywhere
+PASS flunky show 2
+PASS flunky login (device approval)
+PASS flunky logout
+PASS 109 real installed CLI invocations; all registered command paths exercised

@@ -33,3 +33,7 @@
 - M6: Distribution manifests are generated from real final binary bytes; public PyPI/tap/bucket ownership and signing are explicit maintainer prerequisites, never placeholder claims.
 - M6: Release-please triggers build/publish jobs in the same workflow because GITHUB_TOKEN-created releases do not reliably trigger a separate release-event workflow.
 - M6: MkDocs builds a reviewable artifact; publishing a docs domain is deferred until the maintainer configures a hosting destination.
+- M7: Completion installation writes only a dedicated completion file and prints profile setup instructions; shell startup files are never edited automatically.
+- M7: Readiness requires the expected Alembic revision (0004), not merely an existing version table; update this check alongside future schema migrations.
+- M7: TUI starts with the task list focused; Escape leaves search, preserving ordinary typing without hijacking q inside the search field.
+- M7: Upgraded generated Electron to 44.5.1 and Expo to SDK 57 with React Native 0.86.3/React 19.2.3 after npm audits; Electron is clean, but Expo's unpatched upstream braces/node-forge and uuid advisories remain an explicit release limitation (docs/verification/expo-audit.json).

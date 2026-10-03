@@ -17,8 +17,8 @@ jobs:
           python-version: ${{ matrix.python }}
           enable-cache: true
       - run: uv sync --locked --extra dev --extra test
-      - run: uv run ruff check cli backend tests
-      - run: uv run ruff format --check cli backend tests
+      - run: uv run ruff check cli backend tests scripts packaging
+      - run: uv run ruff format --check cli backend tests scripts packaging
       - run: uv run mypy
       - run: uv run python -m pytest --cov=cli --cov=backend --cov-report=xml --cov-fail-under=90
       - run: uv build
@@ -32,10 +32,11 @@ jobs:
             PY=.install-check/bin/python
             CLI=.install-check/bin/flunky
           fi
-          "$PY" -m pip install .
+          "$PY" -m pip install dist/*.whl
           "$CLI" --help
           "$CLI" --version
           "$PY" scripts/check_startup.py
+          "$PY" -m scripts.verify_cli_surface --cli "$CLI"
   docker:
     runs-on: ubuntu-latest
     steps:

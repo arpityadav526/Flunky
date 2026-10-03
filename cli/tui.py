@@ -18,6 +18,7 @@ class TaskBoard(App[None]):
         ("d", "complete", "Complete"),
         ("u", "undo", "Undo"),
         ("/", "search", "Search"),
+        ("escape", "task_list", "Task list"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -31,6 +32,7 @@ class TaskBoard(App[None]):
     async def on_mount(self) -> None:
         self.query_one(DataTable).add_columns("ID", "Title", "Priority", "Due", "Status")
         await self.action_refresh()
+        self.query_one(DataTable).focus()
 
     async def action_refresh(self) -> None:
         table = self.query_one(DataTable)
@@ -84,3 +86,6 @@ class TaskBoard(App[None]):
 
     def action_search(self) -> None:
         self.query_one(Input).focus()
+
+    def action_task_list(self) -> None:
+        self.query_one(DataTable).focus()

@@ -76,7 +76,7 @@ flowchart LR
   CLI --> Templates[Validated layered Jinja blueprints]
 ```
 
-The backend uses Alembic migrations, structured request logs, pagination/filtering, task soft deletion, and session/PAT revocation. Docker runs as a non-root user. The M2 arm64 image measured 104,965,602 bytes; the final build measurement is recorded in the launch report. Production email delivery and a shared multi-worker rate-limit adapter still need deployment-specific implementation. There is no billing or AI agent; only a hidden provider extension contract exists.
+The backend uses Alembic migrations, structured request logs, pagination/filtering, task soft deletion, and session/PAT revocation. Docker runs as a non-root user. The final arm64 image measured 110,251,405 bytes (Docker image inspect; dependency and architecture changes affect size). Production email delivery and a shared multi-worker rate-limit adapter still need deployment-specific implementation. There is no billing or AI agent; only a hidden provider extension contract exists.
 
 ## Develop and verify
 

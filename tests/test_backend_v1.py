@@ -150,3 +150,24 @@ def test_migrations_upgrade_downgrade_and_legacy_data(tmp_path):
     migrate("upgrade", "head")
     migrate("downgrade", "base")
     migrate("upgrade", "head")
+
+
+async def test_ready_rejects_stale_migrations(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    import backend.main as application
+
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path}/ready.db")
+    factory = async_sessionmaker(engine)
+    monkeypatch.setattr(application, "SessionLocal", factory)
+    async with engine.begin() as connection:
+        await connection.execute(text("CREATE TABLE alembic_version(version_num TEXT)"))
+        await connection.execute(text("INSERT INTO alembic_version VALUES ('0001')"))
+    with TestClient(application.app) as client:
+        assert client.get("/ready").status_code == 503
+        async with engine.begin() as connection:
+            await connection.execute(text("UPDATE alembic_version SET version_num='0004'"))
+        assert client.get("/ready").status_code == 200
+    await engine.dispose()

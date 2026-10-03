@@ -64,3 +64,16 @@
 - Ruff lint/format and mypy passed (48 modules); full suite: 623 passed, 92.45% coverage, three snapshots passed.
 - PyInstaller built a 28,799,008-byte arm64 executable locally. Its version and fullstack dry-run commands passed; codesign verification passed for its ad-hoc signature, not a Developer ID signature or notarization.
 - Release-please, OIDC publishing, binary matrix, checksum-derived Homebrew/Scoop/winget artifacts, optional tap update, Dependabot and CodeQL are configured. Hosted execution and account setup remain unverified.
+
+## M7 — final installed CLI and platform verification
+
+- Clean macOS environments: Python 3.10, 3.11, 3.12 and 3.13 each passed 625 tests; final 3.13 coverage 92.50%, three snapshots passed. Ruff lint/format, mypy (48 modules) and lockfile consistency passed.
+- Fresh wheel installation → 109 real CLI subprocess invocations passed, covering every registered path, password/device login, legacy and quick task operations, offline create/complete/replay, ten scaffold stacks, structure apply, profiles, project shortcuts and five shell-completion formats. Exact log: verification/cli-surface.txt.
+- Real Textual PTY launch and q exit passed. It exposed the default search-focus issue; the final board focuses the task list and Escape returns from search, covered by a new headless regression test.
+- Readiness now rejects stale Alembic revisions; regression test covers stale/current schemas. Completion defaults now preserve shell startup files.
+- Hyperfine installed help: mean 14.4ms (20 runs, five warmups); startup-check median 16.5ms against a 150ms budget.
+- Final Docker build passed; arm64 image 110,251,405 bytes, non-root flunky. Live Postgres 16 + two-worker API passed migrations/readiness/auth/task filtering/delete/restore/logout. Temporary containers/network/anonymous volume removed.
+- Clean runtime pip-audit: no known dependency vulnerabilities; first-party Flunky is not in the advisory catalog and is skipped. Runtime CycloneDX SBOM generated. Vulture's four unused framework/protocol parameters reviewed and retained, with raw findings recorded.
+- Updated Electron to 44.5.1 and Expo to 57.0.26/RN 0.86.3 after generated dependency audits. Both passed fresh npm install/test/lint/build; Electron audit is clean, Expo retains 23 upstream transitive advisories (7 moderate, 16 high). Both 1,280-combination generation subsets passed again after changes.
+- Strict MkDocs build and regenerated command help/reference passed. Public PyPI, hosted Windows/Linux/Intel CLI runs, native publisher signing and distribution-index submission have NOT been performed; see LAUNCH_READINESS.md for blockers and required maintainer work.
+- Final rebuilt arm64 standalone binary: 28,804,640 bytes. Real --version, --help and fullstack generation into a temporary directory passed; ad-hoc codesign verification passed.

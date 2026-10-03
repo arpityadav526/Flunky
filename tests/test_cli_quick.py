@@ -125,10 +125,8 @@ def test_doctor_and_completion(respx_mock, monkeypatch, tmp_path):
     respx_mock.get(BASE + "/ready").respond(200, json={"status": "ready"})
     respx_mock.get(BASE + "/v1/auth/me").respond(200, json={"username": "alice"})
     assert json.loads(invoke("doctor", "--json").stdout)["auth"] == "alice"
-    monkeypatch.setattr(
-        "typer._completion_shared.install", lambda **k: ("zsh", tmp_path / "completion")
-    )
     assert "Installed" in invoke("completion", "install", "zsh").output
+    assert (tmp_path / "completions/_flunky").is_file()
 
 
 def test_offline_outbox_and_negative_id_mapping(respx_mock):
@@ -279,3 +277,19 @@ def test_completion_explicit_path(tmp_path):
         ).exit_code
         == 1
     )
+
+
+async def test_tui_search_escape_returns_to_list(monkeypatch):
+    from textual.widgets import DataTable, Input
+
+    from cli.tui import TaskBoard
+
+    monkeypatch.setattr(offline, "list_tasks", lambda **kwargs: ([], False))
+    board = TaskBoard()
+    async with board.run_test() as pilot:
+        assert isinstance(board.focused, DataTable)
+        await pilot.press("/")
+        assert isinstance(board.focused, Input)
+        await pilot.press("escape")
+        assert isinstance(board.focused, DataTable)
+        await pilot.press("q")

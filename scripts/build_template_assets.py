@@ -511,7 +511,7 @@ export class AppModule {}""",
         )
     elif name == "electron":
         package["main"] = "electron/main.cjs"
-        package["devDependencies"]["electron"] = "^39.0.0"
+        package["devDependencies"]["electron"] = "^44.5.1"
         package["scripts"].update(
             {"dev": "electron .", "start": "electron .", "build": "node scripts/build.mjs"}
         )
@@ -535,7 +535,7 @@ app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) openWindow
         )
     else:
         package["main"] = "index.js"
-        package["dependencies"] = {"expo": "~55.0.0", "react": "19.2.0", "react-native": "0.83.2"}
+        package["dependencies"] = {"expo": "~57.0.26", "react": "19.2.3", "react-native": "0.86.3"}
         package["devDependencies"]["@types/react"] = "^19.2.0"
         package["scripts"].update(
             {"dev": "expo start", "start": "expo start", "build": "tsc --noEmit"}

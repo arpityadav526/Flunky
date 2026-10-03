@@ -1,0 +1,4 @@
+backend/schemas/__init__.py:34: unused variable 'cls' (100% confidence)
+backend/schemas/__init__.py:51: unused variable 'cls' (100% confidence)
+cli/ai/__init__.py:11: unused variable 'prompt' (100% confidence)
+cli/main.py:524: unused variable 'json_output' (100% confidence)

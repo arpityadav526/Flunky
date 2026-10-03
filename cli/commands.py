@@ -326,26 +326,22 @@ def register_commands(app: typer.Typer) -> None:
         ),
     ) -> None:
         """Install shell completion. Example: flunky completion install zsh."""
-        from typer._completion_shared import install
+        from typer._completion_shared import get_completion_script
+
+        from cli.config import CONFIG_DIR
 
         if shell not in {"zsh", "bash", "fish", "powershell", "pwsh"}:
             raise ValueError("Choose zsh, bash, fish, powershell, or pwsh.")
-        if path is not None:
-            from typer._completion_shared import get_completion_script
-
-            script = get_completion_script(
-                prog_name="flunky", complete_var="_FLUNKY_COMPLETE", shell=shell
-            )
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with path.open("x", encoding="utf-8") as output:
-                output.write(script)
-            ui.output(
-                {"shell": shell, "path": str(path)},
-                f"Installed completion: {path}. Source this file from your shell profile.",
-            )
-            return
-        installed, path = install(shell=shell, prog_name="flunky")
+        path = path or CONFIG_DIR / "completions" / (
+            "_flunky" if shell == "zsh" else f"flunky.{shell}"
+        )
+        script = get_completion_script(
+            prog_name="flunky", complete_var="_FLUNKY_COMPLETE", shell=shell
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8") as output:
+            output.write(script)
         ui.output(
-            {"shell": installed, "path": str(path)},
-            f"Installed completion: {path}. Restart your shell.",
+            {"shell": shell, "path": str(path)},
+            f"Installed completion: {path}. Source this file from your shell profile; for zsh, add its directory to fpath before compinit.",
         )
