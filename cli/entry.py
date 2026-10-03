@@ -19,3 +19,7 @@ def main() -> None:
     from cli.main import app
 
     app()
+
+
+if __name__ == "__main__":
+    main()

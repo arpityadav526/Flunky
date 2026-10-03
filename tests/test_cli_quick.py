@@ -220,3 +220,62 @@ def test_dates_and_ascii(monkeypatch):
     assert "overdue" in ui.relative_date("2000-01-01")
     monkeypatch.setenv("TERM", "dumb")
     assert ui.relative_date(None) == "-"
+
+
+def test_fast_launcher(monkeypatch, capsys):
+    from cli.entry import main as entry
+
+    monkeypatch.setattr("sys.argv", ["flunky", "--help"])
+    entry()
+    assert "flunky" in capsys.readouterr().out
+    monkeypatch.setattr("sys.argv", ["flunky", "--version"])
+    entry()
+    assert "0.1.0" in capsys.readouterr().out
+    monkeypatch.setattr("sys.argv", ["flunky", "doctor"])
+    called = Mock()
+    monkeypatch.setattr(main, "app", called)
+    entry()
+    assert called.called
+
+
+def test_noninteractive_prompts_and_yes(monkeypatch):
+    from cli.ui.prompts import questionary
+
+    ui.configure(set())
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+    with pytest.raises(ValueError, match="Interactive input"):
+        questionary.text("title").ask()
+    with pytest.raises(ValueError):
+        questionary.password("password").ask()
+    ui.configure({"--yes"})
+    assert questionary.confirm("confirm").ask() is True
+    ui.configure(set())
+
+
+def test_notifier_cache_and_fetch(monkeypatch, tmp_path, respx_mock):
+    from cli import updatecheck
+
+    monkeypatch.setenv("FLUNKY_CACHE_DIR", str(tmp_path))
+    respx_mock.get("https://pypi.org/pypi/flunky/json").respond(
+        200, json={"info": {"version": "0.2.0"}}
+    )
+    updatecheck.fetch()
+    assert json.loads(updatecheck.cache_file().read_text())["version"] == "0.2.0"
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+    monkeypatch.delenv("CI", raising=False)
+    ui.configure(set())
+    updatecheck.notify()
+    respx_mock.get("https://pypi.org/pypi/flunky/json").respond(500)
+    updatecheck.fetch()
+
+
+def test_completion_explicit_path(tmp_path):
+    path = tmp_path / "completion.zsh"
+    invoke("completion", "install", "zsh", "--path", str(path))
+    assert "flunky" in path.read_text()
+    assert (
+        runner.invoke(
+            main.app, ["completion", "install", "zsh", "--path", str(path), "--json"]
+        ).exit_code
+        == 1
+    )

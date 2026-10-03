@@ -5,6 +5,7 @@ import platform
 import shutil
 import sys
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any, Callable
 
 import typer
@@ -291,6 +292,10 @@ def register_commands(app: typer.Typer) -> None:
         """Set api_url or theme. Example: flunky config set api_url http://localhost:8000."""
         if key not in {"api_url", "theme"}:
             raise ValueError("Supported settings: api_url, theme.")
+        if key == "api_url":
+            value = settings.validate_url(value)
+        elif value not in {"auto", "dark", "light", "high-contrast"}:
+            raise ValueError("Theme must be auto, dark, light, or high-contrast.")
         config = settings.load()
         config["profiles"][config["active_profile"]][key] = value
         settings.save(config)
@@ -312,12 +317,33 @@ def register_commands(app: typer.Typer) -> None:
     app.add_typer(completion, name="completion")
 
     @completion.command("install")
-    def completion_install(shell: str = typer.Argument("zsh")) -> None:
+    def completion_install(
+        shell: str = typer.Argument("zsh"),
+        path: Path | None = typer.Option(
+            None,
+            "--path",
+            help="Write completion to a specific file without editing shell profiles",
+        ),
+    ) -> None:
         """Install shell completion. Example: flunky completion install zsh."""
         from typer._completion_shared import install
 
         if shell not in {"zsh", "bash", "fish", "powershell", "pwsh"}:
             raise ValueError("Choose zsh, bash, fish, powershell, or pwsh.")
+        if path is not None:
+            from typer._completion_shared import get_completion_script
+
+            script = get_completion_script(
+                prog_name="flunky", complete_var="_FLUNKY_COMPLETE", shell=shell
+            )
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as output:
+                output.write(script)
+            ui.output(
+                {"shell": shell, "path": str(path)},
+                f"Installed completion: {path}. Source this file from your shell profile.",
+            )
+            return
         installed, path = install(shell=shell, prog_name="flunky")
         ui.output(
             {"shell": installed, "path": str(path)},

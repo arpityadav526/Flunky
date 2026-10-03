@@ -69,8 +69,11 @@ class TaskBoard(App[None]):
         table = self.query_one(DataTable)
         if table.row_count:
             task_id = int(str(table.get_row_at(table.cursor_row)[0]))
-            await asyncio.to_thread(offline.mutate, task_id, {"is_completed": True})
-            await self.action_refresh()
+            try:
+                await asyncio.to_thread(offline.mutate, task_id, {"is_completed": True})
+                await self.action_refresh()
+            except (ValueError, APIError) as exc:
+                self.notify(str(exc), severity="error")
 
     async def action_undo(self) -> None:
         try:

@@ -73,7 +73,7 @@ def get_console(*, error: bool = False) -> Console:
                 for name in ("info", "warning", "error", "success", "prompt", "highlight", "banner")
             }
         )
-    elif light:
+    elif chosen_theme == "light" or (chosen_theme == "auto" and light):
         theme = Theme(
             {
                 "info": "blue",
@@ -106,7 +106,18 @@ class UIConsole:
             )
             state.messages.append(buffer.getvalue().strip())
         elif not state.quiet:
-            get_console().print(*objects, **kwargs)
+            if not unicode_supported():
+                from io import StringIO
+
+                from cli.fast_output import write
+
+                buffer = StringIO()
+                Console(
+                    file=buffer, theme=THEME, color_system=None, width=get_console().width
+                ).print(*objects, **kwargs)
+                write(buffer.getvalue())
+            else:
+                get_console().print(*objects, **kwargs)
 
     def status(self, message: str) -> ContextManager[Any]:
         if state.json or state.quiet or not sys.stdout.isatty() or os.environ.get("CI"):

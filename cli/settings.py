@@ -41,6 +41,10 @@ def api_url() -> str:
         value = config["profiles"].get(config["active_profile"], {}).get("api_url")
     if not isinstance(value, str) or not value:
         raise ValueError("This profile has no API URL. Run `flunky config set api_url URL`.")
+    return validate_url(value)
+
+
+def validate_url(value: str) -> str:
     parsed = urlsplit(value)
     if (
         parsed.scheme not in {"http", "https"}

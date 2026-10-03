@@ -19,3 +19,9 @@
 - M3: Memory rate limiting is process-local and implements an adapter protocol for a shared Redis implementation; production multi-instance deployments need that adapter.
 - M3: Configure coverage for both thread and greenlet concurrency, as required for accurate async SQLAlchemy measurement (https://coverage.readthedocs.io/en/latest/config.html#run-concurrency).
 - M3: Upgrade pytest and syrupy together after pip-audit found PYSEC-2026-1845 in pytest 8.4.2.
+- M4: Retain legacy task/projects commands while adding quick commands; legacy JSON exposes structured data where available and a message envelope otherwise.
+- M4: Cache and outbox partitions include server URL and account identity; replay creation uses a durable server uniqueness key so uncertain responses do not duplicate tasks.
+- M4: Root help is generated from Typer into a packaged text asset and served by a lightweight launcher; normal commands lazily load optional TUI/date parsing functionality.
+- M4: Pin Typer to 0.27 because its Click implementation and completion APIs are vendored; isolate compatibility code in cli/ui/commands.py.
+- M4: The host repeatedly marks editable-install .pth files UF_HIDDEN, which CPython skips; measure and verify regular wheel/source installs, not the broken host editable environment.
+- M4: Shared-runner CI startup budget is 500ms; the measured target on the local M3 Mac remains 150ms.

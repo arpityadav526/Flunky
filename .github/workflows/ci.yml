@@ -35,6 +35,7 @@ jobs:
           "$PY" -m pip install .
           "$CLI" --help
           "$CLI" --version
+          "$PY" scripts/check_startup.py
   docker:
     runs-on: ubuntu-latest
     steps:

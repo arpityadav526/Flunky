@@ -46,9 +46,9 @@ def save_token(token: str, refresh_token: str | None = None) -> None:
         CONFIG_FILE.unlink(missing_ok=True)
     except (keyring.errors.KeyringError, RuntimeError):
         _private_write(data)
-        from rich.console import Console
+        from cli.ui import get_console
 
-        Console(stderr=True).print(
+        get_console(error=True).print(
             "Warning: OS keychain unavailable or disabled; credentials stored in a private file."
         )
 

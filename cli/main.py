@@ -107,40 +107,62 @@ def create_project(
 
 
 @app.command()
-def register():
+def register(
+    username: str | None = typer.Option(None, "--username", "-u"),
+    email: str | None = typer.Option(None, "--email"),
+    password_stdin: bool = typer.Option(False, "--password-stdin"),
+):
+    """Create an account. Example: flunky register -u alice --email a@example.com --password-stdin."""
     console.print(Panel.fit("📝 User Registration"))
 
-    username = questionary.text(
-        "Username:",
-        validate=lambda text: True if len(text) >= 3 else "Username must be at least 3 characters",
-    ).ask()
+    username = (
+        username
+        or questionary.text(
+            "Username:",
+            validate=lambda text: (
+                True if len(text) >= 3 else "Username must be at least 3 characters"
+            ),
+        ).ask()
+    )
     if not username:
         return
 
     import re
 
-    email = questionary.text(
-        "E-mail:",
-        validate=lambda text: (
-            True if re.match(r"[^@]+@[^@]+\.[^@]+", text) else "Invalid email address"
-        ),
-    ).ask()
+    email = (
+        email
+        or questionary.text(
+            "E-mail:",
+            validate=lambda text: (
+                True if re.match(r"[^@]+@[^@]+\.[^@]+", text) else "Invalid email address"
+            ),
+        ).ask()
+    )
     if not email:
         return
 
-    password = questionary.password(
-        "Password:",
-        validate=lambda text: True if len(text) >= 6 else "Password must be at least 6 characters",
-    ).ask()
-    if not password:
-        return
+    if password_stdin:
+        import sys
 
-    password2 = questionary.password(
-        "Confirm Password:",
-        validate=lambda text: True if text == password else "Passwords do not match",
-    ).ask()
-    if not password2:
-        return
+        password = sys.stdin.readline().rstrip("\r\n")
+        if not password:
+            raise ValueError("Password stdin was empty.")
+    else:
+        password = questionary.password(
+            "Password:",
+            validate=lambda text: (
+                True if len(text) >= 6 else "Password must be at least 6 characters"
+            ),
+        ).ask()
+        if not password:
+            return
+
+        password2 = questionary.password(
+            "Confirm Password:",
+            validate=lambda text: True if text == password else "Passwords do not match",
+        ).ask()
+        if not password2:
+            return
 
     with console.status("[bold green]Registering..."):
         try:
@@ -261,8 +283,8 @@ def create_task_command(
 ):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        console.print("Run: python -m cli.main login", style="yellow")
-        return
+        console.print("Run: flunky login", style="yellow")
+        raise typer.Exit(1)
 
     if title is None:
         title = questionary.text("Set the Title:").ask()
@@ -299,7 +321,7 @@ def list_task(
 ):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        return
+        raise typer.Exit(1)
 
     try:
         token = load_token()
@@ -347,7 +369,7 @@ def list_task(
 def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        return
+        raise typer.Exit(1)
 
     try:
         token = load_token()
@@ -383,7 +405,7 @@ def update_task_command(
 ):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        return
+        raise typer.Exit(1)
 
     try:
         token = load_token()
@@ -436,7 +458,7 @@ def update_task_command(
 def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as complete")):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        return
+        raise typer.Exit(1)
 
     try:
         token = load_token()
@@ -458,7 +480,7 @@ def delete_task_command(
 ):
     if not is_locked_in_lmao():
         console.print("❌ Please login first!", style="red")
-        return
+        raise typer.Exit(1)
 
     try:
         token = load_token()

@@ -16,7 +16,8 @@
 │ --help                        Show this message and exit.                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-│ register                                                                     │
+│ register    Create an account. Example: flunky register -u alice --email     │
+│             a@example.com --password-stdin.                                  │
 │ login       Sign in via browser. Scripts: flunky login --with-password -u    │
 │             alice --password-stdin.                                          │
 │ logout      Revoke the current session on the server and remove local        │

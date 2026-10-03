@@ -36,6 +36,7 @@ dependencies = [
   "textual>=1,<7",
   "dateparser>=1.2,<2",
   "orjson>=3.10,<4",
+  "packaging>=25",
 ]
 
 [project.optional-dependencies]

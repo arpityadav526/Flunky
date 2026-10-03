@@ -36,3 +36,15 @@
 - `uv run python scripts/verify_live.py`: passed against a real isolated migrated SQLite/uvicorn server with real password-stdin CLI login, task commands and logout; old access and refresh tokens both rejected afterwards.
 - `uv run pip-audit --skip-editable`: no known vulnerabilities after upgrading pytest/syrupy.
 - Development mail and keychain adapters tested without sending external email or touching the user's real credentials. Production mail/shared rate-limit adapters remain deployment prerequisites.
+
+## M4 — CLI UX, offline mode and terminal behavior
+
+- Ruff lint/format, strict mypy for new CLI modules: passed (44 modules).
+- Expanded suite: 119 tests, including quick commands, flags before/after commands, typed responses, profiles, keychain fallback, offline ordering/ID mapping/undo, idempotent server creation and Textual keyboard/search behavior.
+- Full-suite coverage: 92.66% before the packaging-only dependency correction; final run recorded below.
+- Installed source build in `.install-check`: hyperfine 20 runs after 5 warmups averaged 15.4ms for `flunky --help` on Apple M3; subsequent startup check median 16.1ms (150ms target). Raw evidence in docs/performance/.
+- `python -X importtime`: captured for the lightweight launcher.
+- Live API/real CLI regression smoke passed for password-stdin login, task CRUD and server-side logout.
+- VHS recorded docs/demos/cli.gif in a real zsh PTY. Inspected a rendered frame; it displays successful installed-CLI help. Recording exposed and fixed a missing packaging dependency.
+- Root help is generated, not manually duplicated. The installed-wheel surface will be rechecked in M7.
+- Final M4 run: 119 passed, 92.66% coverage, all snapshots passed.

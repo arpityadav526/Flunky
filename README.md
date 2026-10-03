@@ -253,3 +253,11 @@ LinkedIn: https://www.linkedin.com/in/arpit-yadav-63b2b6293
 ## ⭐ If you like this project
 
 Give it a star ⭐ and feel free to contribute!
+
+## Terminal setup
+
+Use your terminal's system monospace font (Menlo on macOS, Cascadia Mono on Windows) or another font with Unicode support. No patched/Nerd Font is required. Set `TERM=dumb` for ASCII output, `NO_COLOR=1` or `--no-color` to disable colors, and `FLUNKY_THEME=high-contrast` for a monochrome bold theme. `FORCE_COLOR=1` enables color when redirecting; NO_COLOR takes precedence. Use `flunky completion install zsh` for macOS shells, or bash/fish/PowerShell as appropriate. `--path FILE` writes a completion script without changing shell profiles.
+
+The CLI was exercised on macOS arm64 through real subprocesses and a VHS zsh pseudo-terminal; the Textual board also has a headless keyboard/search test. Terminal.app, iTerm2, Warp, VS Code, Windows Terminal and cmd still need their human acceptance pass; a CI matrix is configured but is not evidence that those interfaces were tested. `flunky doctor` reports the current terminal and backend state.
+
+Quick commands: `flunky add "fix login" -p high -d tomorrow -t backend`, `flunky list`, `flunky today`, `flunky upcoming`, `flunky show 1`, `flunky done 1`, `flunky edit 1 --title "ship fix"`, `flunky rm 1 --yes`, `flunky undo`, `flunky sync`, and `flunky tui`. Offline temporary IDs are negative: use `flunky done -- -1`. Offline lists show only cached tasks; reconnect and sync before expecting a complete server view.
