@@ -91,7 +91,7 @@ def create_project(
         )
     except Exception as e:
         console.print(Panel(f"[red]{e}[/red]", title="❌ Error", border_style="red"))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -143,6 +143,8 @@ def register():
             else:
                 console.print(f"❌ Registration failed: {msg}", style="red")
 
+            raise typer.Exit(1) from None
+
 
 @app.command()
 def login():
@@ -167,6 +169,8 @@ def login():
                 console.print("[red]Invalid username or password.[/red]")
             else:
                 console.print(f"❌ Login failed: {msg}", style="red")
+
+            raise typer.Exit(1) from None
 
 
 @app.command()
@@ -211,6 +215,8 @@ def create_task_command(
             console.print("[red]Session expired. Please login again.[/red]")
         else:
             console.print(f"❌ Failed to create task: {msg}", style="red")
+
+        raise typer.Exit(1) from None
 
 
 @task_app.command("list")
@@ -257,6 +263,8 @@ def list_task(
         else:
             console.print(f"❌ Failed to get tasks: {msg}", style="red")
 
+        raise typer.Exit(1) from None
+
 
 @task_app.command("show")
 def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
@@ -282,6 +290,8 @@ def show_task(task_id: int = typer.Argument(..., help="Task ID to show")):
         console.print(Panel(details.strip(), title="📝 Task Details", border_style="cyan"))
     except Exception as e:
         console.print(f"❌ Failed to get task: {e}", style="red")
+
+        raise typer.Exit(1) from None
 
 
 @task_app.command("update")
@@ -314,7 +324,7 @@ def update_task_command(
             ).ask()
 
             if new_title is None or new_description is None or mark_complete is None:
-                raise typer.Exit()
+                return
 
             title = new_title if new_title != current_task["title"] else None
             description = (
@@ -337,6 +347,8 @@ def update_task_command(
     except Exception as e:
         console.print(f"❌ Failed to update task: {e}", style="red")
 
+        raise typer.Exit(1) from None
+
 
 @task_app.command("complete")
 def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as complete")):
@@ -351,6 +363,8 @@ def complete_task(task_id: int = typer.Argument(..., help="Task ID to mark as co
         console.print(f"✅ Task '{updated_task['title']}' marked as complete!", style="green")
     except Exception as e:
         console.print(f"❌ Failed to complete task: {e!s}", style="red")
+
+        raise typer.Exit(1) from None
 
 
 @task_app.command("delete")
@@ -377,6 +391,8 @@ def delete_task_command(
     except Exception as e:
         console.print(f"❌ Failed to delete task: {e}", style="red")
 
+        raise typer.Exit(1) from None
+
 
 @projects_app.command("add")
 def add_project_command(name: str, path: str):
@@ -391,6 +407,8 @@ def add_project_command(name: str, path: str):
             console.print(f"[red]Invalid project name or path: {msg}")
         else:
             console.print(f"❌ {msg}", style="red")
+
+        raise typer.Exit(1) from None
 
 
 @projects_app.command("list")
@@ -420,6 +438,8 @@ def list_projects_command():
     except Exception as e:
         console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
+        raise typer.Exit(1) from None
+
 
 @projects_app.command("remove")
 def remove_project_command(name: str):
@@ -429,12 +449,23 @@ def remove_project_command(name: str):
     except Exception as e:
         console.print(Panel(f"❌ {e}", title="Error", border_style="red"))
 
+        raise typer.Exit(1) from None
+
 
 @app.callback(invoke_without_command=True)
-def main_callback(ctx: typer.Context):
+def main_callback(
+    ctx: typer.Context,
+    version: bool = typer.Option(False, "--version", is_eager=True, help="Show version"),
+):
     """
     [bold blue]FLUNKY[/bold blue] - [green]Developer Productivity CLI[/green]
     """
+    if version:
+        from importlib.metadata import version as package_version
+
+        console.print(f"flunky {package_version('flunky')}")
+        raise typer.Exit()
+
     if ctx.invoked_subcommand is not None:
         return
 

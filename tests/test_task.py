@@ -108,3 +108,26 @@ def test_delete_task(client):
 
     get_response = client.get(f"/tasks/{task_id}", headers=headers)
     assert get_response.status_code == 404
+
+
+def test_ownership_filters_and_missing_tasks(client):
+    headers = create_user_and_get_token(client)
+    task = client.post("/tasks", json={"task_title": "private"}, headers=headers).json()
+    task_id = task["id"]
+    assert client.get("/tasks?completed=true", headers=headers).json() == []
+    assert len(client.get("/tasks?completed=false", headers=headers).json()) == 1
+    client.post(
+        "/register",
+        json={"username": "other", "email": "other@test.com", "password": "testpass123"},
+    )
+    token = client.post("/login", data={"username": "other", "password": "testpass123"}).json()[
+        "access_token"
+    ]
+    other = {"Authorization": f"Bearer {token}"}
+    assert client.get("/tasks", headers=other).json() == []
+    for method in ["GET", "PUT", "DELETE"]:
+        kwargs = {"json": {"title": "stolen"}} if method == "PUT" else {}
+        assert (
+            client.request(method, f"/tasks/{task_id}", headers=other, **kwargs).status_code == 403
+        )
+        assert client.request(method, "/tasks/99999", headers=headers, **kwargs).status_code == 404

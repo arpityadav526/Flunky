@@ -1,9 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from backend.config import DATABASE_URL, SQL_ECHO
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
+
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 

@@ -1,8 +1,9 @@
 import json
+import os
 from pathlib import Path
 
 ## Define config directory and file ##
-CONFIG_DIR = Path.home() / "./flunky"
+CONFIG_DIR = Path(os.environ.get("FLUNKY_CONFIG_DIR", str(Path.home() / "flunky")))
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 

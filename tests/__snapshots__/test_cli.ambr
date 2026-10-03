@@ -1,0 +1,50 @@
+# serializer version: 1
+# name: test_dashboard_and_help
+  '''
+  
+  ███████╗██╗     ██╗   ██╗███╗   ██╗██╗  ██╗██╗   ██╗
+  ██╔════╝██║     ██║   ██║████╗  ██║██║ ██╔╝╚██╗ ██╔╝
+  █████╗  ██║     ██║   ██║██╔██╗ ██║█████╔╝  ╚████╔╝ 
+  ██╔══╝  ██║     ██║   ██║██║╚██╗██║██╔═██╗   ╚██╔╝  
+  ██║     ███████╗╚██████╔╝██║ ╚████║██║  ██╗   ██║   
+  ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝   
+  
+  ╭──────────────────────── 🚀 Welcome to FLUNKY ─────────────────────────╮
+  │ ○ Not logged in 🔒 (Run flunky login)                                 │
+  │                                                                       │
+  │ ⚡ Quick Commands:                                                    │
+  │   • flunky init create <stack> <name>   - Scaffold a new project      │
+  │   • flunky task list                 - Show your tasks                │
+  │   • flunky task create               - Create a new task              │
+  │   • flunky projects list             - View registered local projects │
+  │                                                                       │
+  │ Run any command with --help for options.                              │
+  ╰───────────────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_task_snapshots[command0-response0]
+  '''
+                                               Your Tasks                                             
+  ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+  ┃ ID     ┃ Title                          ┃ Description                              ┃ Status      ┃
+  ┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+  │ 1      │ Ship Flunky                    │ Test first                               │ ⏳ Pending  │
+  └────────┴────────────────────────────────┴──────────────────────────────────────────┴─────────────┘
+  
+  Total: 1 task(s)
+  
+  '''
+# ---
+# name: test_task_snapshots[command1-response1]
+  '''
+  ╭──────────────────────────────────────── 📝 Task Details ─────────────────────────────────────────╮
+  │ ID: 1                                                                                            │
+  │ Title: Ship Flunky                                                                               │
+  │ Description: Test first                                                                          │
+  │ Status: ⏳ Pending                                                                               │
+  │ Created: 2026-10-03T00:00:00Z                                                                    │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---

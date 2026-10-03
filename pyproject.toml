@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flunky"
+version = "0.1.0"
+description = "Developer tasks and project scaffolding from your terminal"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "typer>=0.16,<1", "rich>=14,<15", "questionary>=2.1,<3", "jinja2>=3.1.6,<4",
+  "httpx>=0.28,<1", "pydantic>=2.12,<3", "platformdirs>=4,<5",
+  "fastapi>=0.128,<1", "uvicorn>=0.40,<1", "sqlalchemy>=2.0.45,<3",
+  "python-dotenv>=1,<2", "python-multipart>=0.0.22", "email-validator>=2,<3",
+  "passlib[bcrypt]>=1.7.4,<2", "bcrypt>=4.0,<4.1", "python-jose[cryptography]>=3.5,<4",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "pytest-cov>=6", "pytest-asyncio>=1", "pytest-xdist>=3", "respx>=0.22", "syrupy>=4,<5", "hypothesis>=6"]
+dev = ["ruff>=0.15", "mypy>=1.15", "pre-commit>=4", "build>=1", "types-passlib", "types-python-jose", "pip-audit>=2", "vulture>=2"]
+
+[project.scripts]
+flunky = "cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cli", "backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["cli", "backend"]
+omit = ["cli/templates/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["cli", "backend"]
+
+[[tool.mypy.overrides]]
+module = ["cli.main", "cli.config", "cli.services.*", "backend.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["backend.Auth"]
+disallow_any_generics = false
