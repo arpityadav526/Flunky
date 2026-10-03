@@ -4,16 +4,16 @@ from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class UserCreate(BaseModel):
-        username: str
-        password: str
-        email: EmailStr
+    username: str
+    password: str
+    email: EmailStr
 
-        @field_validator("password")
-        @classmethod
-        def validate_password_length(cls, value: str) -> str:
-            if len(value.encode("utf-8")) > 72:
-                raise ValueError("Password must be 72 bytes or fewer for bcrypt.")
-            return value
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must be 72 bytes or fewer for bcrypt.")
+        return value
 
 
 class UserResponse(BaseModel):

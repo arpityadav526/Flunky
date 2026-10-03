@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 CONFIG_DIR = Path.home() / ".flunky"
 PROJECTS_FILE = CONFIG_DIR / "projects.json"
 

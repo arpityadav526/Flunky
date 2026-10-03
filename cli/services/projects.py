@@ -1,12 +1,11 @@
 import json
 from pathlib import Path
-from typing import Dict
 
 from cli.utils.filesystem import get_projects_file
 from cli.utils.validators import validate_project_name, validate_project_path
 
 
-def load_projects() -> Dict[str, str]:
+def load_projects() -> dict[str, str]:
     projects_file = get_projects_file()
 
     if not projects_file.exists():
@@ -20,7 +19,7 @@ def load_projects() -> Dict[str, str]:
         return {}
 
 
-def save_projects(projects: Dict[str, str]) -> None:
+def save_projects(projects: dict[str, str]) -> None:
     projects_file = get_projects_file()
     data = {"projects": projects}
 
@@ -52,7 +51,7 @@ def remove_project(name: str) -> str:
     return project_name
 
 
-def list_projects() -> Dict[str, str]:
+def list_projects() -> dict[str, str]:
     return load_projects()
 
 

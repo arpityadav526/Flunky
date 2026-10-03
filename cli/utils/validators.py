@@ -19,4 +19,5 @@ def validate_project_path(path: str) -> Path:
 
 def is_valid_project_name(name: str) -> bool:
     import re
+
     return bool(re.match(r"^[a-zA-Z0-9_-]+$", name))

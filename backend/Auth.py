@@ -1,13 +1,14 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-from jose import jwt, JWTError
-from datetime import datetime, timedelta, UTC
+from sqlalchemy.orm import Session
 
+from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from backend.database import get_db
 from backend.models import User
-from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -48,8 +49,7 @@ def verify_token(token_str: str) -> str:
 
 
 def get_current_user(
-    token_str: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    token_str: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
     username = verify_token(token_str)
     user = db.query(User).filter(User.username == username).first()

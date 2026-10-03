@@ -1,0 +1,344 @@
+================================================================================
+FLUNKY — PROJECT STATUS REPORT
+Generated: 2026-10-03
+Repo: /Users/arpityadav526/Desktop/Flunky
+HEAD: 2b91136  "feat: implement custom rich theme and migrate CLI prompts to questionary"
+================================================================================
+
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+FLUNKY is a full-stack task-management + project-scaffolding developer CLI
+(FastAPI backend + Typer/Rich CLI + SQLAlchemy/SQLite).
+
+VERDICT: The core product works. Register → login → task CRUD → logout is
+verified working end-to-end against a live server. The test suite is 12/12
+green. The CLI entry point, banner, and scaffolding all function.
+
+The problems are NOT in the core — they are in the surrounding edges:
+  - 2 CLI command groups ("setup", "ai") are registered but EMPTY (dead menus)
+  - 3 service modules are 0 bytes of dead code (ai, tasks, + unused utils)
+  - 1 real functional bug in the task filter (see §6, BUG-1)
+  - 1 latent crash bug in task delete (see §6, BUG-2)
+  - 10 __pycache__/*.pyc files committed to git
+  - Dockerfile does not ship the CLI, so the container is backend-only
+  - README overstates status vs. reality
+
+
+2. VERIFIED WORKING (tested live, not assumed)
+--------------------------------------------------------------------------------
+BACKEND (FastAPI) — verified via HTTP against a live uvicorn instance
+  [OK] POST   /register                 201, returns UserResponse, rejects
+                                       duplicate username (400) and duplicate
+                                       email (400)
+  [OK] POST   /login                    200, returns JWT {access_token, token_type}
+  [OK] POST   /tasks                    201, creates task bound to current user
+  [OK] GET    /tasks                    200, user-scoped (returns only own tasks)
+  [OK] GET    /tasks?completed=false    200, server-side filter works correctly
+  [OK] GET    /tasks/{id}               200; 404 when missing; 403 when not owner
+  [OK] PUT    /tasks/{id}               200, partial update of title/description/
+                                       is_completed
+  [OK] DELETE /tasks/{id}               204, returns correct status code
+  [OK] Auth guard                       invalid token -> 401 on protected routes
+  [OK] /docs                             200, OpenAPI UI renders
+
+AUTH & SECURITY
+  [OK] bcrypt hashing via passlib CryptContext
+  [OK] JWT sign/verify via python-jose (HS256), `sub` claim carries username
+  [OK] Token expiry enforced (ACCESS_TOKEN_EXPIRE_MINUTES, default 30)
+  [OK] bcrypt 72-byte password cap enforced at schema level (UserCreate)
+  [OK] Ownership isolation enforced on GET/PUT/DELETE (403 not 404)
+  [OK] Config read from .env via python-dotenv; .env is git-ignored (good)
+
+DATABASE
+  [OK] SQLAlchemy 2.x declarative models: User, Task
+  [OK] create_all() auto-migrates on app import (no Alembic needed for now)
+  [OK] Cascade delete: user -> tasks via relationship delete-orphan
+  [OK] SQLite connect_args handled; DATABASE_URL is Postgres-ready
+
+TEST SUITE
+  [OK] 12/12 tests PASS in 3.52s (pytest 9.0.2, Python 3.13.1)
+  [OK] tests/conftest.py overrides get_db -> isolated test DB, drop/create per
+       test, dependency_overrides properly cleared (no leakage)
+  [OK] tests/test_auth.py — 6 tests
+  [OK] tests/test_task.py — 6 tests
+  [WARN] Zero tests cover the CLI layer, scaffold.py, projects.py, or api_client.py
+
+CLI (Typer + Rich + questionary)
+  [OK] `python -m cli.main --help` renders, all 7 groups registered
+  [OK] Bare `flunky` invocation prints ASCII banner + welcome panel with live
+       auth status (decodes JWT `sub` claim client-side)
+  [OK] register / login / logout — questionary prompts with live validators
+       (username >=3, email regex, password >=6, confirm-match)
+  [OK] task create / list / show / update / complete / delete — all wired
+  [OK] task list renders a Rich table with status colouring
+  [OK] task update supports BOTH flag-mode and interactive fallback mode
+  [OK] task delete has a confirm prompt and a --force bypass
+  [OK] Token persisted to ~/.flunky/config.json, restored across invocations
+  [OK] projects add / list / remove — validated names + paths, JSON store
+  [OK] init create <stack> <name> — project name regex validation
+  [OK] questionary 2.1.1 installed and importable
+  [OK] flunky console script installed on PATH (pip install -e .)
+
+PROJECT SCAFFOLDING
+  [OK] Jinja2 templating engine works — verified end-to-end, generated
+       README.md + .gitignore + main.py and ran post_create hooks
+  [OK] 10 template packs present and all manifests parse as valid JSON:
+       cli, ds, electron, fastapi, flutter, mern, nestjs, nextjs,
+       python, react-native
+  [OK] Post-create hooks fire (venv creation, npm/npx scaffolding)
+
+LOGGING & INFRA
+  [OK] Rotating file logger (1MB x 3 backups) + console handler — logs/flunky.log
+  [OK] Every backend route is instrumented with info/warning log lines
+  [OK] Dockerfile builds a valid image spec
+  [OK] Two GitHub Actions workflows exist (ci.yml, docker.yml)
+
+
+3. WHAT IS BROKEN — CONFIRMED (FUNCTIONAL, user-visible) — task status filter is a no-op
+  File:   cli/api_client.py:100
+  Code:   params["Completed"] = completed
+  The backend expects the query param `completed` (backend/main.py:151).
+  Sending "Completed" means FastAPI silently ignores it and returns ALL
+  tasks instead of the filtered set. Verified live:
+      curl ".../tasks?Completed=false"  ->  returned the full task list
+      curl ".../tasks?completed=false"  ->  correctly filtered
+  Impact:  `flunky task list --completed true|false` is silently broken.
+  Fix:     params["completed"] = completed
+  Severity: HIGH — it fails silently, returning wrong data with no error.
+
+BUG-2 (LATENT CRASH) — task delete does not assert the 204 status
+  File:   cli/api_client.py:168
+  Code:   if response.status_code == 200: return response.json()
+  The backend correctly returns 204 No Content (backend/main.py:275). The
+  client checks for 200, which never happens, so the function falls through
+  and returns None silently. Worse: if the server ever DID return 200 the
+  call would .json() an empty body and raise. There is also no 401/403/404
+  branch, so a permission error is indistinguishable from success — the
+  CLI prints "Task deleted successfully!" either way.
+  Fix:     accept 200/204, and raise on 401/403/404.
+  Severity: MEDIUM — false success message + misleading error handling.
+
+
+4. NOT IMPLEMENTED / EMPTY (dead surface area)
+--------------------------------------------------------------------------------
+  [EMPTY] cli "setup" Typer group   — registered in cli/main.py:46,52 but has
+                                     ZERO commands. `flunky setup --help`
+                                     shows only --help. Dead menu.
+  [EMPTY] cli "ai" Typer group       — registered in cli/main.py:47,53 but has
+                                     ZERO commands. `flunky ai --help` shows
+                                     only --help. Dead menu.
+  [0 BYTES] cli/services/ai.py      — completely empty file
+  [0 BYTES] cli/services/tasks.py    — completely empty file
+  [DEAD]   cli/services/vscode.py   — implemented (open_in_vscode) but never
+                                     imported or called anywhere
+  [DEAD]   cli/utils/commands.py    — run_command() implemented, never called
+  [DEAD]   backend/debug_api_check.py, cli/debug_token.py — ad-hoc debug
+                                     scripts left in the tree
+  [BROKEN] root main.py             — creates a bare FastAPI() app and then
+                                     runs uvicorn against "src.app:app", a
+                                     module that does not exist. Running
+                                     `python main.py` crashes. Misleading
+                                     dead file; backend is backend/main.py.
+  Note: a compiled .pyc for main.py is committed, and git log shows it was
+  intentionally "updated" — so this broken file has been committed twice.
+
+
+5. INCOMPLETE / TECHNICAL DEBT
+--------------------------------------------------------------------------------
+  [SECURITY] SECRET_KEY is a real 64-hex secret committed in .env — it IS
+             git-ignored and NOT tracked (verified), so this is OK for the
+             repo. But the value sits in plaintext on disk and the fallback
+             default is the literal string "dev-secret-change-me", so a
+             missing .env silently yields a publicly-known signing key.
+             Recommend failing fast if SECRET_KEY is unset in production.
+  [SECURITY] No token revocation / logout on the server. `flunky logout`
+             only deletes the local file; a stolen JWT stays valid for the
+             full 30 minutes.
+  [CODE]     cli/api_client.py:74  `-> Dict[str, any]` — `any` is the
+             BUILTIN FUNCTION, not `typing.Any`. Confirmed at runtime:
+             the annotation resolves to Dict[str, <built-in function any>].
+             Latent bug; harmless today because it is never introspected.
+  [CODE]     cli/api_client.py:1  `from http.client import HTTPException`
+             — a nonsense import, never used. Almost certainly meant
+             `httpx.HTTPError`.
+  [CODE]     get_auth_headers() is defined TWICE (lines 70 and 129). Harmless
+             but indicates unreviewed merges.
+  [CODE]     No timeouts on httpx calls in task_func, get_all_task,
+             get_task_by_id, delete_task (register/login/update do have
+             them). A hung backend hangs the CLI forever.
+  [CODE]     Base URL is hardcoded to http://localhost:8000 in api_client.py.
+             No env override — you cannot point the CLI at a remote/staging
+             backend without editing source.
+  [CODE]     No retry/backoff anywhere; every call is a blocking sync httpx
+             call inside a Typer command.
+  [PACKAGING] setup.py install_requires is missing questionary, jinja2 deps
+             are there but questionary is absent — yet cli/main.py imports it
+             unconditionally at module top level. A clean `pip install flunky`
+             from PyPI/GitHub will CRASH ON IMPORT.
+  [PACKAGING] requirements.txt is a fully-pinned flat list including
+             transitive deps (pillow, cryptography, protobuf) — will conflict
+             and rot over time. Not a real lockfile strategy.
+  [PACKAGING] Dockerfile COPYs only backend/. The `flunky` CLI is NOT
+             installed in the image, so `docker run flunky` gives you an API
+             server with no CLI. README's Docker section implies otherwise.
+  [DOCKER]   Dockerfile installs gcc with no cleanup; no non-root user;
+             no HEALTHCHECK. Single-stage, ~300MB+ rather than the ~220MB
+             the README claims.
+  [GIT]      10 __pycache__/*.pyc files are tracked in git (.gitignore has
+             __pycache__/ but they were committed before the rule).
+  [GIT]      .DS_Store is tracked AND shows as modified in git status.
+  [GIT]      .idea/ (PyCharm project files) is tracked, contradicts .gitignore.
+  [TESTING]  No CLI/integration tests at all — the entire client half of the
+             project is untested. BUG-1 and BUG-2 both live in exactly that
+             untested layer, which is why they shipped.
+  [TESTING]  conftest.py hardcodes sqlite:///./test_flunky.db (no tmp_path),
+             so a crashed run can leave stale schema/state on disk.
+  [DOCS]     README claims "Advanced Features - IN PROGRESS" but does not
+             mention that setup/ai groups are empty, that scaffolding
+             post_create hooks run arbitrary shell, or the ~300MB image size.
+  [DOCS]     README shows the old port-8000 workflow only; there is no
+             documentation that the CLI needs the backend running separately.
+
+
+6. SECURITY POSTURE
+--------------------------------------------------------------------------------
+  GOOD:  bcrypt hashing, JWT expiry, per-user task isolation, 401/403/404
+         separation, .env git-ignored, secrets not in git history.
+  RISK:  weak default SECRET_KEY fallback; no server-side logout/revocation;
+         no rate limiting on /login (brute-forceable); no CORS config (not
+         needed for a CLI, fine); post_create hooks execute arbitrary shell
+         from template JSON (acceptable locally, but worth documenting).
+
+7. ARCHITECTURE LAYOUT (as built)
+--------------------------------------------------------------------------------
+Flunky/
+├── backend/                    FastAPI application
+│   ├── main.py       (320 ln)  7 REST routes + create_all bootstrap
+│   ├── Auth.py        (63 ln)  bcrypt, JWT encode/decode, get_current_user dep
+│   ├── models.py      (30 ln)  User, Task ORM models
+│   ├── schemas.py     (51 ln)  Pydantic request/response models
+│   ├── database.py    (22 ln)  engine, SessionLocal, get_db dependency
+│   ├── config.py       (9 ln)  env-driven settings
+│   ├── logger.py      (44 ln)  rotating file + console logger
+│   └── debug_api_check.py    ad-hoc script (dead)
+├── cli/                        Typer application
+│   ├── main.py       (419 ln)  7 command groups, banner, all commands
+│   ├── api_client.py (176 ln)  httpx wrapper for all 7 endpoints  <-- 2 BUGS
+│   ├── config.py      (71 ln)  token persistence in ~/.flunky
+│   ├── ui_theme.py    (16 ln)  custom Rich theme + shared console
+│   ├── services/
+│   │   ├── scaffold.py (34 ln)  Jinja2 project generator   [WORKS]
+│   │   ├── projects.py (65 ln)  saved-project registry     [WORKS]
+│   │   ├── vscode.py   (17 ln)  open in VS Code            [DEAD]
+│   │   ├── ai.py                empty                     [DEAD]
+│   │   └── tasks.py             empty                     [DEAD]
+│   ├── utils/
+│   │   ├── validators.py (21 ln)  project name/path checks [WORKS]
+│   │   ├── filesystem.py (14 ln)  ~/.flunky paths          [WORKS]
+│   │   └── commands.py    (5 ln)  run_command()            [DEAD]
+│   ├── debug_token.py           ad-hoc script (dead)
+│   └── templates/              10 stacks x manifest.json + .j2 files
+│         cli, ds, electron, fastapi, flutter, mern, nestjs,
+│         nextjs, python, react-native
+├── tests/
+│   ├── conftest.py     (49 ln)  TestClient + per-test DB isolation
+│   ├── test_auth.py   (119 ln)  6 tests — register/login/duplicate/expiry
+│   └── test_task.py   (151 ln)  6 tests — CRUD, 401, 403, 404, isolation
+├── main.py                      BROKEN stray file (points at src.app)
+├── setup.py                     packaging, MISSING questionary dep
+├── requirements.txt             pinned flat deps
+├── Dockerfile                   backend-only image
+├── pytest.ini
+├── flunky.db / test_flunky.db   SQLite data
+├── post.txt                     LinkedIn/building-in-public writeup
+└── .github/workflows/{ci,docker}.yml
+
+CLI command surface as actually shipped:
+  flunky                      banner + auth status dashboard
+  flunky register             [WORKS]
+  flunky login                [WORKS]
+  flunky logout               [WORKS]
+  flunky task create          [WORKS]
+  flunky task list            [WORKS, but --completed filter BROKEN]
+  flunky task show <id>       [WORKS]
+  flunky task update <id>     [WORKS]
+  flunky task complete <id>   [WORKS]
+  flunky task delete <id>     [WORKS, but status handling BROKEN]
+  flunky projects add         [WORKS]
+  flunky projects list        [WORKS]
+  flunky projects remove      [WORKS]
+  flunky init create <s> <n>  [WORKS, 10 stacks]
+  flunky setup                [EMPTY — no commands]
+  flunky ai                   [EMPTY — no commands]
+
+
+8. TEST RESULTS (verbatim)
+--------------------------------------------------------------------------------
+$ python -m pytest -q
+platform darwin -- Python 3.13.1, pytest-9.0.2, pluggy-1.6.0
+rootdir: /Users/arpityadav526/Desktop/Flunky
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.12.1, cov-7.1.0
+collected 12 items
+
+tests/test_auth.py ......                                                [ 50%]
+tests/test_task.py ......                                                [100%]
+============================== 12 passed in 3.52s ==============================
+
+
+9. PRIORITISED ACTION PLAN
+--------------------------------------------------------------------------------
+P0 — must fix (small, high impact)
+  1. cli/api_client.py:100  "Completed" -> "completed"        [BUG-1]
+  2. cli/api_client.py:168  accept 200/204 + raise on errors  [BUG-2]
+  3. setup.py               add "questionary" to install_requires
+                            (pip install currently produces a crashing CLI)
+
+P1 — correctness / hygiene
+  4. Remove root main.py (or fix it to point at backend.main:app)
+  5. Remove empty cli/services/ai.py, cli/services/tasks.py
+  6. Remove the empty "setup" and "ai" Typer groups, or implement them
+  7. Delete dead modules: services/vscode.py, utils/commands.py, both debug_*.py
+  8. git rm --cached the 10 tracked .pyc files, .DS_Store, .idea/
+  9. Fix `Dict[str, any]` -> `Dict[str, Any]`; drop the http.client import;
+     remove the duplicate get_auth_headers
+
+P2 — robustness
+ 10. Add BASE_URL env override (FLUNKY_API_URL) to api_client.py
+ 11. Add timeouts to the 4 httpx calls that lack them
+ 12. Fail fast if SECRET_KEY is missing / still the default value
+ 13. Write CLI integration tests — that layer has zero coverage, which is
+     precisely why BUG-1 and BUG-2 shipped
+
+P3 — product
+ 14. Implement or delete the setup / ai command groups
+ 15. Add timeouts + retry to the scaffolding post_create hooks; log hook
+     failures instead of silently ignoring them (subprocess.run result
+     is currently never checked)
+ 16. Update README: reflect that setup/ai are empty, correct the Docker
+     image size, document that the backend must run separately from the CLI
+
+
+10. SCORECARD
+--------------------------------------------------------------------------------
+  Backend API .................... 9/10   solid, correct, instrumented
+  Auth & security ................. 7/10   no revocation, weak default key
+  Task management ................ 8/10   backend perfect, client has 2 bugs
+  CLI UX ......................... 9/10   genuinely polished (Rich + questionary)
+  Project scaffolding ............ 8/10   works well; hook errors swallowed
+  Testing ........................ 4/10   backend solid, CLI untested
+  Packaging / installability .... 4/10   missing questionary = broken install
+  Docker ........................ 5/10   builds, but backend-only
+  CI/CD ......................... 8/10   both workflows valid
+  Repo hygiene .................. 4/10   pyc/.DS_Store/.idea committed
+  ------------------------------------------
+  OVERALL ....................... 7/10
+
+  Bottom line: a genuinely working, well-architected core with a CLI layer that
+  is 2 small fixes away from clean, wrapped in packaging and hygiene debt that
+  makes the project harder to install and maintain than it needs to be.
+
+================================================================================
+END OF REPORT
+================================================================================

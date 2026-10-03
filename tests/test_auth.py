@@ -1,11 +1,7 @@
 def test_register_user_success(client):
     response = client.post(
         "/register",
-        json={
-            "username": "arpit",
-            "email": "arpit@test.com",
-            "password": "testpass123"
-        }
+        json={"username": "arpit", "email": "arpit@test.com", "password": "testpass123"},
     )
 
     assert response.status_code == 201
@@ -17,21 +13,11 @@ def test_register_user_success(client):
 
 def test_register_duplicate_username(client):
     client.post(
-        "/register",
-        json={
-            "username": "arpit",
-            "email": "a1@test.com",
-            "password": "testpass123"
-        }
+        "/register", json={"username": "arpit", "email": "a1@test.com", "password": "testpass123"}
     )
 
     response = client.post(
-        "/register",
-        json={
-            "username": "arpit",
-            "email": "a2@test.com",
-            "password": "testpass123"
-        }
+        "/register", json={"username": "arpit", "email": "a2@test.com", "password": "testpass123"}
     )
 
     assert response.status_code == 400
@@ -41,20 +27,12 @@ def test_register_duplicate_username(client):
 def test_register_duplicate_email(client):
     client.post(
         "/register",
-        json={
-            "username": "arpit1",
-            "email": "arpit@test.com",
-            "password": "testpass123"
-        }
+        json={"username": "arpit1", "email": "arpit@test.com", "password": "testpass123"},
     )
 
     response = client.post(
         "/register",
-        json={
-            "username": "arpit2",
-            "email": "arpit@test.com",
-            "password": "testpass123"
-        }
+        json={"username": "arpit2", "email": "arpit@test.com", "password": "testpass123"},
     )
 
     assert response.status_code == 400
@@ -64,20 +42,10 @@ def test_register_duplicate_email(client):
 def test_login_success(client):
     client.post(
         "/register",
-        json={
-            "username": "arpit",
-            "email": "arpit@test.com",
-            "password": "testpass123"
-        }
+        json={"username": "arpit", "email": "arpit@test.com", "password": "testpass123"},
     )
 
-    response = client.post(
-        "/login",
-        data={
-            "username": "arpit",
-            "password": "testpass123"
-        }
-    )
+    response = client.post("/login", data={"username": "arpit", "password": "testpass123"})
 
     assert response.status_code == 200
     data = response.json()
@@ -86,13 +54,7 @@ def test_login_success(client):
 
 
 def test_login_invalid_username(client):
-    response = client.post(
-        "/login",
-        data={
-            "username": "wronguser",
-            "password": "testpass123"
-        }
-    )
+    response = client.post("/login", data={"username": "wronguser", "password": "testpass123"})
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
@@ -101,20 +63,10 @@ def test_login_invalid_username(client):
 def test_login_invalid_password(client):
     client.post(
         "/register",
-        json={
-            "username": "arpit",
-            "email": "arpit@test.com",
-            "password": "testpass123"
-        }
+        json={"username": "arpit", "email": "arpit@test.com", "password": "testpass123"},
     )
 
-    response = client.post(
-        "/login",
-        data={
-            "username": "arpit",
-            "password": "wrongpass"
-        }
-    )
+    response = client.post("/login", data={"username": "arpit", "password": "wrongpass"})
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"

@@ -1,15 +1,18 @@
-import os
 import json
-from pathlib import Path
-from jinja2 import Environment, FileSystemLoader
+import os
 import subprocess
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+
 
 class ScaffoldError(Exception):
     pass
 
-def scaffold_project(project_type: str, project_name: str, target_dir: str = None):
+
+def scaffold_project(project_type: str, project_name: str, target_dir: str | None = None):
     template_dir = TEMPLATES_DIR / project_type
     if not template_dir.exists():
         raise ScaffoldError(f"Template '{project_type}' not found.")

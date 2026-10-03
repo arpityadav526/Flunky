@@ -1,19 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 from starlette.status import HTTP_201_CREATED
 
-from backend.database import engine, get_db
 from backend import models, schemas
-from backend.logger import logger
 from backend.Auth import (
+    create_access_token,
+    get_current_user,
     hash_password,
     verify_password,
-    create_access_token,
-    get_current_user
 )
+from backend.database import engine, get_db
+from backend.logger import logger
 from backend.models import Task
-
 
 app = FastAPI(title="Flunky_CLI")
 
@@ -24,60 +23,37 @@ logger.info("Database tables ensured")
 
 @app.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def user_registration(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    logger.info(
-        "Registration attempt for username='%s', email='%s'",
-        user.username,
-        user.email
-    )
+    logger.info("Registration attempt for username='%s', email='%s'", user.username, user.email)
 
     username_exist = db.query(models.User).filter(models.User.username == user.username).first()
     if username_exist is not None:
         logger.warning(
-            "Registration failed: username already taken for username='%s'",
-            user.username
+            "Registration failed: username already taken for username='%s'", user.username
         )
-        raise HTTPException(
-            status_code=400,
-            detail="Username already taken"
-        )
+        raise HTTPException(status_code=400, detail="Username already taken")
 
     email_exist = db.query(models.User).filter(models.User.email == user.email).first()
     if email_exist is not None:
-        logger.warning(
-            "Registration failed: email already registered for email='%s'",
-            user.email
-        )
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
-        )
+        logger.warning("Registration failed: email already registered for email='%s'", user.email)
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pass = hash_password(user.password)
 
-    new_user = models.User(
-        username=user.username,
-        email=user.email,
-        hashed_password=hashed_pass
-    )
+    new_user = models.User(username=user.username, email=user.email, hashed_password=hashed_pass)
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     logger.info(
-        "User registered successfully: user_id=%s username='%s'",
-        new_user.id,
-        new_user.username
+        "User registered successfully: user_id=%s username='%s'", new_user.id, new_user.username
     )
 
     return new_user
 
 
 @app.post("/login", response_model=schemas.Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     logger.info("Login attempt for username='%s'", form_data.username)
 
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
@@ -87,7 +63,7 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not verify_password(form_data.password, user.hashed_password):
@@ -95,39 +71,28 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     access_token = create_access_token(data={"sub": user.username})
 
-    logger.info(
-        "Login successful for user_id=%s username='%s'",
-        user.id,
-        user.username
-    )
+    logger.info("Login successful for user_id=%s username='%s'", user.id, user.username)
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.post("/tasks", response_model=schemas.TaskResponse, status_code=HTTP_201_CREATED)
 def create_task(
     task: schemas.TaskCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     logger.info(
-        "Create task request by user_id=%s username='%s'",
-        current_user.id,
-        current_user.username
+        "Create task request by user_id=%s username='%s'", current_user.id, current_user.username
     )
 
     new_task = Task(
-        title=task.task_title,
-        description=task.task_description,
-        user_id=current_user.id
+        title=task.task_title, description=task.task_description, user_id=current_user.id
     )
 
     db.add(new_task)
@@ -138,7 +103,7 @@ def create_task(
         "Task created: task_id=%s user_id=%s title='%s'",
         new_task.id,
         current_user.id,
-        new_task.title
+        new_task.title,
     )
 
     return new_task
@@ -148,13 +113,13 @@ def create_task(
 def get_all_task(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-    completed: bool = None
+    completed: bool | None = None,
 ):
     logger.info(
         "Fetch tasks request by user_id=%s username='%s' completed_filter=%s",
         current_user.id,
         current_user.username,
-        completed
+        completed,
     )
 
     task_query = db.query(models.Task).filter(models.Task.user_id == current_user.id)
@@ -167,7 +132,7 @@ def get_all_task(
         "Tasks fetched for user_id=%s completed_filter=%s count=%s",
         current_user.id,
         completed,
-        len(tasks)
+        len(tasks),
     )
 
     return tasks
@@ -180,18 +145,14 @@ def get_task(
     current_user: models.User = Depends(get_current_user),
 ):
     logger.info(
-        "Fetch single task request: task_id=%s requested_by_user_id=%s",
-        task_id,
-        current_user.id
+        "Fetch single task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id
     )
 
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
 
     if task is None:
         logger.warning(
-            "Task not found: task_id=%s requested_by_user_id=%s",
-            task_id,
-            current_user.id
+            "Task not found: task_id=%s requested_by_user_id=%s", task_id, current_user.id
         )
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -200,15 +161,11 @@ def get_task(
             "Unauthorized task access: task_id=%s owner_user_id=%s requested_by_user_id=%s",
             task.id,
             task.user_id,
-            current_user.id
+            current_user.id,
         )
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    logger.info(
-        "Task fetched successfully: task_id=%s user_id=%s",
-        task.id,
-        current_user.id
-    )
+    logger.info("Task fetched successfully: task_id=%s user_id=%s", task.id, current_user.id)
 
     return task
 
@@ -218,13 +175,9 @@ def update_task(
     task_id: int,
     task_update: schemas.TaskUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
-    logger.info(
-        "Update task request: task_id=%s requested_by_user_id=%s",
-        task_id,
-        current_user.id
-    )
+    logger.info("Update task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id)
 
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
 
@@ -232,24 +185,18 @@ def update_task(
         logger.warning(
             "Update failed: task not found task_id=%s requested_by_user_id=%s",
             task_id,
-            current_user.id
+            current_user.id,
         )
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
-        )
+        raise HTTPException(status_code=404, detail="Task not found")
 
     if task.user_id != current_user.id:
         logger.warning(
             "Unauthorized task update: task_id=%s owner_user_id=%s requested_by_user_id=%s",
             task.id,
             task.user_id,
-            current_user.id
+            current_user.id,
         )
-        raise HTTPException(
-            status_code=403,
-            detail="Not authorized to access this task"
-        )
+        raise HTTPException(status_code=403, detail="Not authorized to access this task")
 
     if task_update.title is not None:
         task.title = task_update.title
@@ -263,11 +210,7 @@ def update_task(
     db.commit()
     db.refresh(task)
 
-    logger.info(
-        "Task updated successfully: task_id=%s user_id=%s",
-        task.id,
-        current_user.id
-    )
+    logger.info("Task updated successfully: task_id=%s user_id=%s", task.id, current_user.id)
 
     return task
 
@@ -276,13 +219,9 @@ def update_task(
 def delete_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
-    logger.info(
-        "Delete task request: task_id=%s requested_by_user_id=%s",
-        task_id,
-        current_user.id
-    )
+    logger.info("Delete task request: task_id=%s requested_by_user_id=%s", task_id, current_user.id)
 
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
 
@@ -290,32 +229,20 @@ def delete_task(
         logger.warning(
             "Delete failed: task not found task_id=%s requested_by_user_id=%s",
             task_id,
-            current_user.id
+            current_user.id,
         )
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
-        )
+        raise HTTPException(status_code=404, detail="Task not found")
 
     if task.user_id != current_user.id:
         logger.warning(
             "Unauthorized task delete: task_id=%s owner_user_id=%s requested_by_user_id=%s",
             task.id,
             task.user_id,
-            current_user.id
+            current_user.id,
         )
-        raise HTTPException(
-            status_code=403,
-            detail="Not authorized to access this task"
-        )
+        raise HTTPException(status_code=403, detail="Not authorized to access this task")
 
     db.delete(task)
     db.commit()
 
-    logger.info(
-        "Task deleted successfully: task_id=%s user_id=%s",
-        task.id,
-        current_user.id
-    )
-
-    return None
+    logger.info("Task deleted successfully: task_id=%s user_id=%s", task.id, current_user.id)

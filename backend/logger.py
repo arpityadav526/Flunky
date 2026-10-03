@@ -2,8 +2,6 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from backend.config import DATABASE_URL  # optional if you want config import initialized
-
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_DIR = os.getenv("LOG_DIR", "logs")
 LOG_FILE = os.path.join(LOG_DIR, "flunky.log")

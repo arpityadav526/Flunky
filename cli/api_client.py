@@ -1,9 +1,7 @@
-from http.client import HTTPException
+from typing import Any
 
 import httpx
-from typing import Optional, Dict, Any
 from rich.console import Console
-
 
 console = Console()
 
@@ -41,9 +39,7 @@ def login_user(username: str, password: str):
         "password": password,
     }
 
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
     try:
         response = httpx.post(
@@ -67,21 +63,15 @@ def login_user(username: str, password: str):
         raise Exception(f"could not connect to server: {e}")
 
 
-def get_auth_headers(token: str):
-   
-    return {"Authorization": f"Bearer {token.strip()}"}
-
-def task_func(title: str, description: str, token: str)->Dict[str, any]:
-    data={
+def task_func(title: str, description: str, token: str) -> dict[str, Any]:
+    data = {
         "task_title": title,
         "task_description": description,
     }
-    header={
-        "Authorization": f"Bearer {token.strip()}"
-    }
-    response=httpx.post(f"{BASE_URL}/tasks", json=data, headers=header)
+    header = {"Authorization": f"Bearer {token.strip()}"}
+    response = httpx.post(f"{BASE_URL}/tasks", json=data, headers=header)
 
-    if response.status_code==201:
+    if response.status_code == 201:
         return response.json()
     elif response.status_code == 401:
         raise Exception("Not authenticated. Please login first.")
@@ -90,37 +80,30 @@ def task_func(title: str, description: str, token: str)->Dict[str, any]:
         raise Exception(error_detail)
 
 
-
-def get_all_task(token: str, completed: Optional[bool] = None)-> list:
-    header={
-        "Authorization": f"Bearer {token.strip()}"
-    }
-    params={}
+def get_all_task(token: str, completed: bool | None = None) -> list:
+    header = {"Authorization": f"Bearer {token.strip()}"}
+    params = {}
     if completed is not None:
-        params["Completed"]=completed
+        params["Completed"] = completed
 
+    response = httpx.get(f"{BASE_URL}/tasks", headers=header, params=params)
 
-    response=httpx.get(f"{BASE_URL}/tasks",headers=header, params=params)
-
-    if response.status_code==200:
+    if response.status_code == 200:
         return response.json()
-    elif response.status_code==401 :
+    elif response.status_code == 401:
         raise Exception("Not authenticated. Please login first.")
     else:
         raise Exception("Failed to get tasks")
 
 
-def get_task_by_id(task_id: int, token: str)->Dict[str, any]:
-    headers={
-        "Authorization": f"Bearer {token.strip()}"
-    }
+def get_task_by_id(task_id: int, token: str) -> dict[str, Any]:
+    headers = {"Authorization": f"Bearer {token.strip()}"}
 
+    response = httpx.get(f"{BASE_URL}/tasks/{task_id}", headers=headers)
 
-    response=httpx.get(f"{BASE_URL}/tasks/{task_id}", headers=headers)
-
-    if response.status_code==200:
+    if response.status_code == 200:
         return response.json()
-    elif response.status_code==404:
+    elif response.status_code == 404:
         raise Exception("not found")
     else:
         raise Exception("not authorized")
@@ -158,19 +141,8 @@ def update_task(task_id: int, token: str, title=None, description=None, is_compl
     raise Exception(detail)
 
 
-
-
-def delete_task(task_id: int, token : str)->None:
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
-    response=httpx.delete(f"{BASE_URL}/tasks/{task_id}", headers=headers)
-    if response.status_code==200:
+def delete_task(task_id: int, token: str) -> None:
+    headers = {"Authorization": f"Bearer {token}"}
+    response = httpx.delete(f"{BASE_URL}/tasks/{task_id}", headers=headers)
+    if response.status_code == 200:
         return response.json()
-
-
-
-
-
-
-
