@@ -38,6 +38,7 @@ from cli.services.projects import (
 from cli.ui.commands import FlunkyGroup
 from cli.ui.prompts import questionary
 from cli.ui_theme import console
+from cli.validation import email_error, password_error, username_error
 
 app = typer.Typer(
     cls=FlunkyGroup,
@@ -68,27 +69,26 @@ def register(
         username
         or questionary.text(
             "Username:",
-            validate=lambda text: (
-                True if len(text) >= 3 else "Username must be at least 3 characters"
-            ),
+            validate=lambda text: username_error(text) or True,
         ).ask()
     )
     if not username:
         return
 
-    import re
+    if error := username_error(username):
+        raise ValueError(error)
 
     email = (
         email
         or questionary.text(
             "E-mail:",
-            validate=lambda text: (
-                True if re.match(r"[^@]+@[^@]+\.[^@]+", text) else "Invalid email address"
-            ),
+            validate=lambda text: email_error(text) or True,
         ).ask()
     )
     if not email:
         return
+    if error := email_error(email):
+        raise ValueError(error)
 
     if password_stdin:
         import sys
@@ -99,9 +99,7 @@ def register(
     else:
         password = questionary.password(
             "Password:",
-            validate=lambda text: (
-                True if len(text) >= 6 else "Password must be at least 6 characters"
-            ),
+            validate=lambda text: password_error(text) or True,
         ).ask()
         if not password:
             return
@@ -112,6 +110,9 @@ def register(
         ).ask()
         if not password2:
             return
+
+    if error := password_error(password):
+        raise ValueError(error)
 
     with console.status("[bold green]Registering..."):
         try:
@@ -169,6 +170,11 @@ def login(
                 )
             )
             webbrowser.open(result["verification_uri"])
+            console.print(
+                "Waiting for browser approval. Use an existing account; "
+                "if you need to register first, press Ctrl+C and run `flunky register`. "
+                "Password sign-in: `flunky login --with-password`."
+            )
             deadline = time.monotonic() + result["expires_in"]
             interval = result["interval"]
             device_code = result["device_code"]

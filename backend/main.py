@@ -84,12 +84,24 @@ async def http_error(request: Request, exc: HTTPException) -> JSONResponse:
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
     # Do not echo rejected input: it can include passwords or access tokens.
+    messages = {
+        "username": "Username must be 3–50 characters: letters, numbers, underscores or hyphens (no spaces).",
+        "password": "Password must be 8–1024 characters.",
+        "email": "Enter a valid email address.",
+    }
+    details = []
+    if request.url.path in {"/register", "/v1/register"}:
+        for error in exc.errors():
+            field = error["loc"][-1] if error["loc"] else None
+            if field in messages and messages[field] not in details:
+                details.append(messages[field])
+    message = " ".join(details) or "Invalid request; check the API schema"
     return JSONResponse(
         {
-            "detail": "Invalid request",
+            "detail": message,
             "error": {
                 "code": "validation_error",
-                "message": "Invalid request; check the API schema",
+                "message": message,
                 "request_id": request.state.request_id,
             },
         },

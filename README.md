@@ -46,6 +46,10 @@ Add-ons: `docker`, `ci`, `database`, `auth`, `linting`, `docs-site`, `testing`, 
 
 ## Run the task backend
 
+On the Mac configured for this checkout, the backend now runs automatically as a LaunchAgent. Open a new terminal and run `flunky doctor`; no server terminal is needed. See [the installed Mac setup guide](docs/MAC_SETUP.txt) for its data location, logs and service controls. This is local hosting and requires the Mac to be awake and the user logged in.
+
+For a fresh setup on another machine:
+
 Keep the backend running in one terminal. The following macOS/Linux example uses a separate demo database, preserving an existing `flunky.db`:
 
 ```sh
@@ -71,6 +75,8 @@ flunky list
 ```
 
 `login` opens browser approval. Use `flunky login --with-password --username NAME` for an interactive password login; scripts can add `--password-stdin` and supply the password through stdin.
+
+Registration usernames must be 3–50 letters, numbers, underscores or hyphens, with no spaces. Passwords must be 8–1024 characters. Invalid input is explained before the CLI sends the registration request.
 
 The Compose alternative runs PostgreSQL 16, migrations and the API. Configure `SECRET_KEY` and `POSTGRES_PASSWORD`, then run `docker compose up --build`. See the [TXT guide](docs/USER_GUIDE.txt) for setup and persistent-volume considerations.
 

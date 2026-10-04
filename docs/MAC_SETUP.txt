@@ -1,0 +1,124 @@
+FLUNKY: INSTALLED MAC SETUP
+===========================
+Configured on 2026-10-04 for this Mac.
+
+START USING IT
+-------------
+Open a new Terminal window. You can work from any directory:
+
+  flunky doctor
+  flunky --help
+  flunky register --username arpit_yadav
+  flunky login --with-password --username arpit_yadav
+  flunky add "My first task"
+  flunky list
+
+Run registration only if you do not already have an account. Enter your own
+email and password at the prompts. Usernames must contain 3-50 letters,
+numbers, underscores or hyphens; spaces are not allowed. Passwords must be
+8-1024 characters. Browser login is also available with `flunky login`.
+
+For a terminal that was already open during installation, run:
+
+  source ~/.zshrc
+  rehash
+
+The installed executable is ~/.local/bin/flunky. It has its own dependency
+environment managed by uv and does not require activating a project venv.
+Avoid activating the old project venv, which contains outdated dependencies.
+
+BACKGROUND BACKEND
+------------------
+API: http://localhost:8000
+API documentation: http://localhost:8000/docs
+
+The backend is a macOS LaunchAgent named com.flunky.backend. It starts when
+you log in, survives closing Terminal and VS Code, and restarts if its
+process exits. Do not start another backend manually on port 8000.
+
+This is local hosting on this Mac, not a public cloud deployment. It is
+available while the Mac is awake and your user is logged in. It does not
+serve other computers and cannot remain available while the Mac is off.
+
+The app and its Python environment live outside the repository:
+
+  ~/Library/Application Support/Flunky/backend/
+
+The active database is:
+
+  ~/Library/Application Support/Flunky/backend/flunky.db
+
+It was copied using SQLite backup from the repository's flunky-guide.db;
+the original remains untouched as a backup. New changes go to the active
+database, not to the old repository copy. The backend has a new private
+signing secret in its restricted .env file. Existing accounts and passwords
+are preserved, but sessions from the previous manual server need a new login.
+
+Email verification/reset messages use the local development mailbox adapter;
+this setup does not configure an external email delivery provider.
+
+CHECK, RESTART, OR STOP
+----------------------
+Check readiness:
+
+  flunky doctor
+  curl --fail http://localhost:8000/ready
+
+Inspect the background service:
+
+  launchctl print "gui/$(id -u)/com.flunky.backend"
+
+Restart:
+
+  launchctl kickstart -k "gui/$(id -u)/com.flunky.backend"
+
+Stop and unload it (it will no longer auto-restart in the current session):
+
+  launchctl bootout "gui/$(id -u)/com.flunky.backend"
+
+Start again:
+
+  launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.flunky.backend.plist"
+
+Disable it across logins after stopping:
+
+  launchctl disable "gui/$(id -u)/com.flunky.backend"
+
+Re-enable before starting again:
+
+  launchctl enable "gui/$(id -u)/com.flunky.backend"
+
+Logs:
+
+  tail -n 50 "$HOME/Library/Logs/Flunky/backend.log"
+  tail -n 50 "$HOME/Library/Logs/Flunky/backend-error.log"
+
+Uvicorn writes normal startup messages to the error log as well. Device-login
+HTTP 400 authorization_pending responses mean browser approval is still
+pending; they are not backend crashes. Use password login to skip that flow.
+
+UPDATES AND BACKUPS
+-------------------
+The installed CLI and backend are packaged copies. Editing the repository
+does not update them automatically. Back up the service directory before
+replacing its package or running database migrations. Stop the service before
+copying a raw database file; use SQLite's backup API for live backups.
+
+From the checkout, rebuild with `uv build`, then install the resulting wheel
+with `uv tool install --force PATH_TO_WHEEL` to update the terminal command.
+Updating the backend also requires installing that wheel into its .venv,
+copying any new migrations, applying them from the service directory, and
+restarting the LaunchAgent. Preserve the service .env and database.
+
+VERIFICATION
+------------
+634 automated tests passed with 92.85% coverage. All 109 installed-CLI
+verification invocations passed. Lint, formatting and type checks passed.
+The suite reports one upstream Starlette TestClient deprecation warning;
+it is not a runtime failure.
+
+Live service verification covers registration, password login, task creation,
+read, completion and removal, plus automatic restart and task/session
+persistence. The temporary test account was removed afterward.
+
+See USER_GUIDE.txt for the full command and project-generation reference.

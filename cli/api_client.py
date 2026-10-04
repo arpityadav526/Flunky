@@ -44,9 +44,7 @@ def _request(
                 params=params,
             )
     except httpx.RequestError:
-        raise APIError(
-            f"Can't reach {BASE_URL}. Is the server running? Try `flunky doctor`."
-        ) from None
+        raise APIError(f"Can't reach {url}. Is the server running? Try `flunky doctor`.") from None
     if response.status_code not in (200, 201, 204):
         fallback = {
             401: "Not authenticated. Run `flunky login`.",

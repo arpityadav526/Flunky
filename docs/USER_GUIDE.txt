@@ -3,6 +3,15 @@ FLUNKY - COMPLETE SETUP AND COMMAND GUIDE
 For the current repository version: 0.1.0
 Prepared: 2026-10-03
 
+MAC INSTALLATION UPDATE (2026-10-04)
+This Mac now has a standalone `flunky` command and an automatic background
+backend. Open a new terminal and run `flunky doctor`. You do not need the
+two-terminal startup below on this configured Mac. See MAC_SETUP.txt in this
+folder for service controls, log locations and the active database path.
+The backend is local: the Mac must be awake and your user logged in.
+Usernames cannot contain spaces (use arpit_yadav); passwords need at least
+8 characters. Registration prompts now enforce the backend's rules.
+
 This guide covers local installation, backend startup, every CLI command,
 generated projects, Docker, verification, and troubleshooting. A complete
 option-by-option help reference is included at the end.

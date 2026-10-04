@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_register_user_success(client):
     response = client.post(
         "/register",
@@ -101,3 +104,22 @@ def test_argon2_accepts_long_password(client):
         "/register", json={"username": "long", "email": "long@test.com", "password": "🦋" * 20}
     )
     assert response.status_code == 201
+
+
+@pytest.mark.parametrize("path", ["/register", "/v1/register"])
+def test_registration_validation_explains_rules_without_echoing_input(client, path):
+    response = client.post(
+        path,
+        json={
+            "username": "private invalid name",
+            "email": "private-bad-email",
+            "password": "secret",
+        },
+    )
+    assert response.status_code == 422
+    message = response.json()["detail"]
+    assert "no spaces" in message
+    assert "8–1024" in message
+    assert "valid email" in message
+    for value in ("private invalid name", "private-bad-email", "secret"):
+        assert value not in response.text

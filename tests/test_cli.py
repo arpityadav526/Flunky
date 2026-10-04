@@ -132,6 +132,36 @@ def test_auth_commands(command, success, prompts, respx_mock):
 
 
 @pytest.mark.parametrize(
+    "username,email,password,message",
+    [
+        ("arpit yadav", "a@example.com", "testpass123", "no spaces"),
+        ("ab", "a@example.com", "testpass123", "3–50"),
+        ("a" * 51, "a@example.com", "testpass123", "3–50"),
+        ("alice", "not-an-email", "testpass123", "valid email"),
+        ("alice", "a@example.com", "short6", "8–1024"),
+        ("alice", "a@example.com", "x" * 1025, "8–1024"),
+    ],
+)
+def test_register_rejects_invalid_input_before_http(username, email, password, message, respx_mock):
+    result = runner.invoke(
+        main.app,
+        ["register", "--username", username, "--email", email, "--password-stdin"],
+        input=password + "\n",
+    )
+    assert result.exit_code == 1
+    assert message in result.output
+    assert password not in result.output
+    assert not respx_mock.calls
+
+
+def test_connection_error_reports_selected_server(monkeypatch, respx_mock):
+    monkeypatch.setenv("FLUNKY_API_URL", "http://localhost:8123")
+    respx_mock.get("http://localhost:8123/health").mock(side_effect=httpx.ConnectError("offline"))
+    with pytest.raises(api_client.APIError, match="localhost:8123"):
+        api_client._request("GET", "/health")
+
+
+@pytest.mark.parametrize(
     "command,answers",
     [
         ("register", [None]),
