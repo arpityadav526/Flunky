@@ -27,6 +27,8 @@ Public PyPI publication has not been verified as this release. Install from this
 
 No backend or account is needed:
 
+New projects go directly onto your Desktop, regardless of your terminal's current folder. Use `--directory .` to create one in the current folder, or `--directory /path/to/folder` to choose another parent folder. `FLUNKY_PROJECTS_DIR` can override the default for scripts.
+
 ```sh
 flunky init my-app --stack fastapi --yes
 flunky init fullstack-app --stack fastapi --type fullstack --addons docker,ci --yes

@@ -49,4 +49,5 @@ def isolate_auth_services(monkeypatch, tmp_path):
     monkeypatch.setattr(mail, "mailer", mailbox)
     monkeypatch.setenv("FLUNKY_TOKEN_STORAGE", "file")
     monkeypatch.setenv("FLUNKY_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("FLUNKY_PROJECTS_DIR", str(tmp_path))
     return mailbox

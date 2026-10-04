@@ -1,9 +1,11 @@
 """Project generation commands and previews."""
 
 import difflib
+import shlex
 from pathlib import Path
 
 import typer
+from platformdirs import user_desktop_path
 from rich.tree import Tree
 
 from cli import ui
@@ -25,6 +27,12 @@ def register_blueprints(app: typer.Typer) -> None:
         name: str | None = typer.Argument(None),
         legacy_stack: str | None = typer.Argument(None, hidden=True),
         legacy_name: str | None = typer.Argument(None, hidden=True),
+        directory: Path | None = typer.Option(
+            None,
+            "--directory",
+            envvar="FLUNKY_PROJECTS_DIR",
+            help="Parent folder for the project. Defaults to your Desktop; use . for the current folder.",
+        ),
         stack: str | None = typer.Option(
             None,
             help="python, cli, fastapi, ds, nextjs, mern, nestjs, electron, react-native, flutter; or a user template name.",
@@ -49,13 +57,14 @@ def register_blueprints(app: typer.Typer) -> None:
             False, help="Explicitly trust installation hooks from a user template."
         ),
     ) -> None:
-        """Generate a project. Example: flunky init demo --stack fastapi --type fullstack --yes."""
+        """Generate a project on your Desktop. Example: flunky init demo --stack fastapi --yes."""
+        parent = (directory or user_desktop_path()).expanduser().absolute()
         if name == "create" and legacy_stack and legacy_name:
             # Preserve the original command and service boundary for existing integrations.
             ui.console.print(
                 "`init create STACK NAME` is deprecated; use `init NAME --stack STACK`."
             )
-            path = scaffold.scaffold_project(legacy_stack, legacy_name)
+            path = scaffold.scaffold_project(legacy_stack, legacy_name, str(parent / legacy_name))
             ui.output({"path": path}, f"Project created at {path}")
             return
         if legacy_stack or legacy_name:
@@ -90,7 +99,8 @@ def register_blueprints(app: typer.Typer) -> None:
             tuple(filter(None, (s.strip() for s in addons.split(",")))),
             license_name,
         )
-        target = Path(name).absolute()
+        target = parent / name
+        steps = [f"cd {shlex.quote(str(target))}", *steps]
         if dry_run:
             preview(files, target)
             ui.output(

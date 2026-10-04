@@ -37,6 +37,7 @@ def main():
             "FLUNKY_API_URL": base,
             "FLUNKY_CONFIG_DIR": str(work / "config"),
             "FLUNKY_DATA_DIR": str(work / "data"),
+            "FLUNKY_PROJECTS_DIR": str(work),
             "FLUNKY_TOKEN_STORAGE": "file",
             "FLUNKY_MAILBOX_DIR": str(work / "mailbox"),
             "BROWSER": "true",

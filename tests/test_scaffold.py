@@ -97,6 +97,46 @@ def test_hooks_checked(tmp_path, monkeypatch):
         scaffold.run_hook(tmp_path, scaffold.Hook(argv=["test"]))
 
 
+@pytest.mark.parametrize("legacy", [False, True])
+def test_init_defaults_to_desktop(tmp_path, monkeypatch, legacy):
+    from typer.testing import CliRunner
+
+    from cli.blueprints import commands
+    from cli.main import app
+
+    desktop = tmp_path / "Desktop"
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    monkeypatch.chdir(checkout)
+    monkeypatch.delenv("FLUNKY_PROJECTS_DIR")
+    monkeypatch.setattr(commands, "user_desktop_path", lambda: desktop)
+    args = ["create", "python", "demo"] if legacy else ["demo", "--stack", "python", "--yes"]
+    result = CliRunner().invoke(app, ["init", *args, "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["path"] == str(desktop / "demo")
+    assert (desktop / "demo" / "main.py").is_file()
+    assert not (checkout / "demo").exists()
+
+
+def test_init_directory_override_and_preview(tmp_path, monkeypatch):
+    from typer.testing import CliRunner
+
+    from cli.main import app
+
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+    args = ["init", "demo", "--stack", "python", "--directory", "custom folder", "--yes", "--json"]
+    result = runner.invoke(app, [*args, "--dry-run"])
+    assert result.exit_code == 0, result.output
+    target = tmp_path / "custom folder" / "demo"
+    assert json.loads(result.output)["path"] == str(target)
+    assert not target.exists()
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert (target / "main.py").is_file()
+    assert json.loads(result.output)["next_steps"][0] == f"cd '{target}'"
+
+
 def test_blueprint_commands(tmp_path, monkeypatch):
     from typer.testing import CliRunner
 

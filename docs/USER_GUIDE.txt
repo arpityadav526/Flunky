@@ -18,6 +18,10 @@ generated projects, Docker, verification, and troubleshooting. A complete
 option-by-option help reference is included at the end.
 
 Commands are examples, not one giant script. Run the sections you need.
+`flunky init NAME` now creates projects on your Desktop by default. Use
+`--directory .` for the current directory, or `--directory /path/to/folder`
+to choose another parent folder. FLUNKY_PROJECTS_DIR overrides the default
+for scripts. The CLI prints the full destination and a matching cd command.
 Replace example usernames, paths, domains and task IDs with your own values.
 Do not type the terminal prompt symbol; none is included in these examples.
 
