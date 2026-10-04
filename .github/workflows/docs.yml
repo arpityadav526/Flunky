@@ -14,7 +14,7 @@ jobs:
       - run: uv run python -m scripts.generate_docs
       - run: git diff --exit-code docs/COMMANDS.md
       - run: uv run mkdocs build --strict
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs-site
           path: site/
