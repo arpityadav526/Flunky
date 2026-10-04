@@ -1,0 +1,1 @@
+{"name": "test-project", "image": "mcr.microsoft.com/devcontainers/universal:2", "postCreateCommand": "python scripts/check.py"}

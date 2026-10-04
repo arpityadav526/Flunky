@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "blueprint_version": "1.0.0",
+  "stack": "python",
+  "type": "app",
+  "addons": [],
+  "license": "MIT"
+}

@@ -1,0 +1,5 @@
+# Architecture
+
+- .: python
+
+Keep domain logic separate from transport/UI and storage. Add design decisions as short dated notes in docs/decisions.md.

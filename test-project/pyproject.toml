@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "test-project"
+version = "0.1.0"
+description = "test-project application"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.3", "ruff>=0.15", "httpx>=0.28"]
+
+[project.scripts]
+project_test_project = "project_test_project:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/project_test_project"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

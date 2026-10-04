@@ -1,0 +1,12 @@
+"""test-project public API."""
+__version__ = "0.1.0"
+
+
+def greet(name: str) -> str:
+    if not name.strip():
+        raise ValueError("Name must not be empty")
+    return f"Hello, {name.strip()}!"
+
+
+def main() -> None:
+    print(greet("world"))
