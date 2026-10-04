@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     sql_echo: bool = False
     access_token_expire_minutes: int = 15
     sentry_dsn: str | None = None
+    mail_delivery_enabled: bool = True
 
     @model_validator(mode="after")
     def validate_production(self) -> "Settings":
@@ -26,6 +28,14 @@ class Settings(BaseSettings):
             self.database_url = self.database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
         elif self.database_url.startswith(("postgres://", "postgresql://")):
             self.database_url = "postgresql+asyncpg://" + self.database_url.split("://", 1)[1]
+        if self.database_url.startswith("postgresql+asyncpg://"):
+            url = make_url(self.database_url)
+            query = dict(url.query)
+            if "sslmode" in query:
+                query["ssl"] = query.pop("sslmode")
+            # libpq-only option supplied by Neon; asyncpg negotiates TLS itself.
+            query.pop("channel_binding", None)
+            self.database_url = url.set(query=query).render_as_string(hide_password=False)
         return self
 
 

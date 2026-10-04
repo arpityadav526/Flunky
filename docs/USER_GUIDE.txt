@@ -3,12 +3,13 @@ FLUNKY - COMPLETE SETUP AND COMMAND GUIDE
 For the current repository version: 0.1.0
 Prepared: 2026-10-03
 
-MAC INSTALLATION UPDATE (2026-10-04)
-This Mac now has a standalone `flunky` command and an automatic background
-backend. Open a new terminal and run `flunky doctor`. You do not need the
-two-terminal startup below on this configured Mac. See MAC_SETUP.txt in this
-folder for service controls, log locations and the active database path.
-The backend is local: the Mac must be awake and your user logged in.
+CLOUD INSTALLATION UPDATE (2026-10-04)
+This Mac has a standalone `flunky` command connected to the production API
+at https://flunky-api.vercel.app, hosted on Vercel with Neon Postgres.
+Open a new terminal and run `flunky doctor`. You do not need the two-terminal
+startup below. The old local backend is stopped and disabled; the cloud API
+works independently of your Mac. See VERCEL_SETUP.txt for the active setup.
+Email verification and password-reset delivery need an email provider.
 Usernames cannot contain spaces (use arpit_yadav); passwords need at least
 8 characters. Registration prompts now enforce the backend's rules.
 

@@ -2,6 +2,11 @@ FLUNKY: INSTALLED MAC SETUP
 ===========================
 Configured on 2026-10-04 for this Mac.
 
+UPDATE: The backend is now hosted at https://flunky-api.vercel.app and the
+CLI uses its prod profile. The local LaunchAgent below is STOPPED AND
+DISABLED; its files remain as a backup. See VERCEL_SETUP.txt for the active
+configuration. The sections below describe the previous local installation.
+
 START USING IT
 -------------
 Open a new Terminal window. You can work from any directory:

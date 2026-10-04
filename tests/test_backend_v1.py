@@ -11,6 +11,43 @@ from test_task import create_user_and_get_token
 from backend.core.config import Settings
 
 
+def test_neon_connection_options_are_compatible_with_asyncpg():
+    from sqlalchemy.engine import make_url
+
+    settings = Settings(
+        database_url="postgresql://user:password@db.example.com/main?sslmode=require&channel_binding=require"
+    )
+    url = make_url(settings.database_url)
+    assert url.drivername == "postgresql+asyncpg"
+    assert url.query == {"ssl": "require"}
+    assert url.password == "password"
+
+
+def test_cloud_registration_without_mail_delivery(client, monkeypatch, isolate_auth_services):
+    from backend.core.config import settings
+
+    monkeypatch.setattr(settings, "mail_delivery_enabled", False)
+    response = client.post(
+        "/v1/register",
+        json={"username": "cloud_user", "email": "cloud@example.com", "password": "testpass123"},
+    )
+    assert response.status_code == 201
+    isolate_auth_services.send.assert_not_called()
+    token = client.post(
+        "/v1/login", data={"username": "cloud_user", "password": "testpass123"}
+    ).json()["access_token"]
+    response = client.post(
+        "/v1/auth/resend-verification", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 503
+    responses = [
+        client.post("/v1/auth/password-reset", json={"email": email})
+        for email in ("cloud@example.com", "unknown@example.com")
+    ]
+    assert all(response.status_code == 503 for response in responses)
+    assert responses[0].json()["detail"] == responses[1].json()["detail"]
+
+
 def test_rich_tasks_filters_pagination_restore(client):
     headers = create_user_and_get_token(client)
     first = client.post(

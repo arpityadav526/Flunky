@@ -1,9 +1,11 @@
+import os
 from collections.abc import AsyncIterator
 from typing import Any
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from backend.core.config import settings
 
@@ -12,7 +14,14 @@ class Base(DeclarativeBase):
     pass
 
 
-engine = create_async_engine(settings.database_url, echo=settings.sql_echo)
+if os.environ.get("VERCEL") and not settings.database_url.startswith("postgresql+asyncpg://"):
+    raise RuntimeError("Vercel requires a persistent PostgreSQL DATABASE_URL.")
+
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.sql_echo,
+    **({"poolclass": NullPool} if os.environ.get("VERCEL") else {}),
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 

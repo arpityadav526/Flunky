@@ -100,6 +100,10 @@ async def refresh(db: AsyncSession, raw: str) -> Token:
 
 
 async def send_action(db: AsyncSession, user: User, kind: str) -> None:
+    from backend.core.config import settings
+
+    if not settings.mail_delivery_enabled:
+        raise HTTPException(503, "Email delivery is not configured on this server.")
     raw = secrets.token_urlsafe(48)
     db.add(
         AuthAction(

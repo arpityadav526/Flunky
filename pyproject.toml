@@ -71,6 +71,9 @@ release = [
 [project.scripts]
 flunky = "cli.entry:main"
 
+[tool.vercel]
+entrypoint = "backend.main:app"
+
 [tool.hatch.build.targets.wheel]
 packages = ["cli", "backend"]
 
@@ -100,4 +103,3 @@ disallow_incomplete_defs = false
 disallow_untyped_calls = false
 check_untyped_defs = false
 warn_return_any = false
-

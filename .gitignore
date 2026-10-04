@@ -34,3 +34,4 @@ Desktop.ini
 # Local inspection input (archived under docs/history)
 /status.txt
 .install-check/
+.vercel

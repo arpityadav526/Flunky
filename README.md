@@ -46,9 +46,17 @@ Add-ons: `docker`, `ci`, `database`, `auth`, `linting`, `docs-site`, `testing`, 
 
 ## Run the task backend
 
-On the Mac configured for this checkout, the backend now runs automatically as a LaunchAgent. Open a new terminal and run `flunky doctor`; no server terminal is needed. See [the installed Mac setup guide](docs/MAC_SETUP.txt) for its data location, logs and service controls. This is local hosting and requires the Mac to be awake and the user logged in.
+The production backend is live at **https://flunky-api.vercel.app**, backed by Neon Postgres. The installed Mac CLI uses this URL through its `prod` profile. Run `flunky doctor`; no server terminal is needed, and the API does not depend on your Mac staying awake. See [the cloud setup guide](docs/VERCEL_SETUP.txt) for deployment details and limitations. Email verification and password-reset delivery still require an email provider.
 
-For a fresh setup on another machine:
+To use the hosted backend on another machine:
+
+```sh
+flunky config profile prod
+flunky config set api_url https://flunky-api.vercel.app
+flunky doctor
+```
+
+For optional local development:
 
 Keep the backend running in one terminal. The following macOS/Linux example uses a separate demo database, preserving an existing `flunky.db`:
 

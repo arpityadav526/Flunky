@@ -1,0 +1,89 @@
+FLUNKY CLOUD BACKEND
+====================
+Deployed to production on 2026-10-04.
+
+API: https://flunky-api.vercel.app
+Interactive API docs: https://flunky-api.vercel.app/docs
+Readiness: https://flunky-api.vercel.app/ready
+Dashboard: https://vercel.com/arpit-yadavs-projects-54d1e29f/flunky-api
+
+The installed Mac CLI now uses the prod profile with the public API URL.
+The backend works independently of your Mac; no local server terminal is
+needed. Vercel runs FastAPI, and a separate Neon Free database named
+flunky-db stores accounts, sessions and tasks in Singapore.
+
+USE IT
+------
+Open a new terminal:
+
+  flunky doctor
+  flunky register --username arpit_yadav
+  flunky login --with-password --username arpit_yadav
+  flunky add "My first cloud task"
+  flunky list
+
+Register only if you do not already have an account. Browser approval is
+also supported with `flunky login`. No personal account was created by the
+deployment checks; all temporary test accounts were removed.
+
+To configure another installed CLI:
+
+  flunky config profile prod
+  flunky config set api_url https://flunky-api.vercel.app
+  flunky doctor
+
+DATA AND LOCAL BACKUP
+--------------------
+The local service database was checked and copied into the new cloud schema.
+It contained no user accounts or tasks at migration time. Your original
+files remain at ~/Library/Application Support/Flunky/backend/.
+
+The old com.flunky.backend LaunchAgent is stopped and disabled. Its data is
+now a historical local copy; new cloud changes do not sync into that file.
+MAC_SETUP.txt documents the previous installation and local service controls.
+
+DEPLOYMENT
+----------
+The repository is linked to the flunky-api Vercel project. pyproject.toml
+points Vercel at backend.main:app; vercel.json selects FastAPI and Singapore.
+.vercelignore excludes local databases, credentials, environments and other
+non-runtime files from uploads. PostgreSQL connection settings translate
+Neon's libpq URL options for asyncpg. Vercel uses NullPool and refuses SQLite.
+
+Production environment variables include DATABASE_URL, SECRET_KEY,
+ENVIRONMENT=production and MAIL_DELIVERY_ENABLED=false. Secret values are
+not committed. Apply future database migrations before deploying code that
+needs them, using the existing cloud database rather than a new resource.
+
+Deploy backend updates from this checkout:
+
+  vercel deploy --prod --yes
+
+Check production error logs:
+
+  vercel logs --environment production --level error --since 1h --no-follow --no-branch
+
+LIMITATIONS
+-----------
+Email delivery is not configured. Registration and login work, but password
+reset and email-verification delivery return an explicit unavailable response.
+Automation-token creation requires verified email and therefore needs an
+email-provider setup first. No successful email delivery is implied.
+
+The existing application rate limiter is per instance, not shared across
+Vercel instances. No external alerting or log drain was added. Vercel and
+Neon free-plan limits and cold starts still apply.
+
+VERIFICATION
+------------
+Production deployment: dpl_9vEr7ZFLev4fN7fmffzCm5ni3mmX (READY).
+636 tests passed; coverage 92.87%. Lint, formatting and type checks passed.
+One upstream TestClient deprecation warning remains in the test environment.
+Public health, readiness and API documentation all returned HTTP 200.
+Installed CLI checks passed registration, password login, doctor, task
+creation, listing, editing, reading, completion and deletion. Public device
+approval issued a usable session after the documented polling interval.
+Temporary cloud test accounts were deleted. Production error-log scan was
+empty at verification time; this is a point-in-time check, not monitoring.
+
+Reference: https://vercel.com/docs/frameworks/backend/fastapi

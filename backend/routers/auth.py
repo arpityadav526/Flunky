@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.Auth import get_current_user
 from backend.core import rate_limit
+from backend.core.config import settings
 from backend.core.security import aware, digest, hash_password, utcnow, verify_password
 from backend.database import get_db
 from backend.models import AuthAction, AuthSession, DeviceFlow, Task, User
@@ -59,7 +60,8 @@ async def register(value: UserCreate, db: DB, request: Request) -> UserResponse:
         await db.rollback()
         raise HTTPException(400, "Username or email already registered") from None
     await db.refresh(user)
-    await auth.send_action(db, user, "verify_email")
+    if settings.mail_delivery_enabled:
+        await auth.send_action(db, user, "verify_email")
     return UserResponse.model_validate(user)
 
 
@@ -111,6 +113,8 @@ async def resend_verification(db: DB, user: CurrentUser, request: Request) -> di
 @router.post("/auth/password-reset", status_code=202)
 async def request_reset(value: EmailRequest, db: DB, request: Request) -> dict[str, str]:
     throttle(request, "reset", 5)
+    if not settings.mail_delivery_enabled:
+        raise HTTPException(503, "Email delivery is not configured on this server.")
     user = await db.scalar(select(User).where(User.email == value.email))
     if user:
         await auth.send_action(db, user, "reset_password")

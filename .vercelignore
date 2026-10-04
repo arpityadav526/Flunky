@@ -1,0 +1,15 @@
+/*
+!backend
+!backend/**
+!cli
+!cli/**
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!vercel.json
+**/__pycache__/**
+**/*.pyc
+**/.env*
+**/*.db
+**/*.sqlite*
