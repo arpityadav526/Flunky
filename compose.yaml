@@ -1,10 +1,11 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: flunky
       POSTGRES_USER: flunky
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup_container.py first}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -12,22 +13,42 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-  migrate:
+  api:
+    image: flunky:local
     build: .
-    environment: &backend-env
-      DATABASE_URL: postgresql+asyncpg://flunky:${POSTGRES_PASSWORD}@db:5432/flunky
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://flunky@db:5432/flunky
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup_container.py first}
       ENVIRONMENT: production
-      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY}
-    command: [alembic, upgrade, head]
+      SECRET_KEY: ${SECRET_KEY:?Run scripts/setup_container.py first}
+      MAIL_DELIVERY_ENABLED: "false"
+    ports: ['${FLUNKY_BIND_ADDRESS:-127.0.0.1}:${FLUNKY_PORT:-8000}:8000']
     depends_on:
       db:
         condition: service_healthy
-  api:
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  cli:
+    profiles: [cli]
+    image: flunky:local
     build: .
-    environment: *backend-env
-    ports: ['127.0.0.1:8000:8000']
+    network_mode: service:api
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+    entrypoint: [flunky]
+    command: [--help]
+    working_dir: /workspace
+    environment:
+      FLUNKY_API_URL: http://127.0.0.1:8000
+      FLUNKY_CONFIG_DIR: /home/flunky/.config/flunky
+      FLUNKY_DATA_DIR: /home/flunky/.local/share/flunky
+      FLUNKY_TOKEN_STORAGE: file
+      FLUNKY_PROJECTS_DIR: /workspace
+    volumes:
+      - cli-home:/home/flunky
+      - .:/workspace
 volumes:
   postgres-data:
+  cli-home:

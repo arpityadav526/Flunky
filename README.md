@@ -23,6 +23,20 @@ If Flunky is already installed, update it from this checkout with `uv tool insta
 
 Public PyPI publication has not been verified as this release. Install from this checkout until the release is published and its identity confirmed.
 
+## Install with Docker (no host Python required)
+
+Docker Desktop supports macOS and Windows (Linux containers); Linux can use Docker
+Engine with the Compose plugin. From this checkout:
+
+```sh
+docker run --rm --mount "type=bind,source=.,target=/workspace" -w /workspace python:3.13-slim python scripts/setup_container.py
+docker compose --env-file .env.docker up -d --build --wait --wait-timeout 180
+```
+
+Open http://localhost:8000/docs. On Linux, add `--user "$(id -u):$(id -g)"` to the
+first command. See [container installation](docs/CONTAINERS.md) for containerized
+CLI commands, persistent data, upgrades, and Kubernetes installation.
+
 ## Generate a project
 
 No backend or account is needed:
@@ -88,7 +102,7 @@ flunky list
 
 Registration usernames must be 3–50 letters, numbers, underscores or hyphens, with no spaces. Passwords must be 8–1024 characters. Invalid input is explained before the CLI sends the registration request.
 
-The Compose alternative runs PostgreSQL 16, migrations and the API. Configure `SECRET_KEY` and `POSTGRES_PASSWORD`, then run `docker compose up --build`. See the [TXT guide](docs/USER_GUIDE.txt) for setup and persistent-volume considerations.
+The Compose alternative runs PostgreSQL 16 and the API with automatic migrations. Follow the [container installation guide](docs/CONTAINERS.md) for Docker and Kubernetes setup.
 
 ## Everyday commands
 

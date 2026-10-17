@@ -41,7 +41,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t flunky:ci .
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python scripts/setup_container.py
+      - run: docker compose --env-file .env.docker up -d --build --wait --wait-timeout 180
+      - run: docker compose --env-file .env.docker exec -T api python < scripts/smoke_api.py
+      - run: docker compose --env-file .env.docker run --rm cli --version
+      - if: always()
+        run: docker compose --env-file .env.docker logs --tail=100
+      - if: always()
+        run: docker compose --env-file .env.docker down -v
+  kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: flunky-ci
+      - run: docker build -t flunky:local .
+      - run: kind load docker-image flunky:local --name flunky-ci
+      - run: python scripts/setup_container.py
+      - run: kubectl apply -f deploy/kubernetes/namespace.yaml
+      - run: kubectl -n flunky create secret generic flunky-secrets --from-env-file=.env.docker
+      - run: kubectl apply -k deploy/kubernetes
+      - run: kubectl -n flunky rollout status deployment/api --timeout=300s
+      - run: kubectl -n flunky exec -i deployment/api -- python < scripts/smoke_api.py
+      - if: failure()
+        run: |
+          kubectl -n flunky get pods,pvc
+          kubectl -n flunky logs deployment/api --all-containers
+
 
   audit:
     runs-on: ubuntu-latest
@@ -71,7 +104,7 @@ jobs:
           channel: stable
       - run: uv sync --locked --extra dev --extra test
       - run: uv run python -m scripts.verify_blueprints --stack ${{ matrix.stack }}
-      - run: uv run flunky init demo --stack ${{ matrix.stack }} --yes --install
+      - run: uv run flunky init demo --stack ${{ matrix.stack }} --yes --install --directory .
       - run: python demo/scripts/check.py
       - if: contains(fromJSON('["python","cli","fastapi","ds"]'), matrix.stack)
         working-directory: demo

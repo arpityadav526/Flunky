@@ -22,3 +22,5 @@ coverage.xml
 .hypothesis
 .idea
 .vscode
+
+test-project

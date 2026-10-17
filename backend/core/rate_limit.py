@@ -28,8 +28,10 @@ class MemoryRateLimiter:
                 headers={"Retry-After": str(max(1, int(until - now)))},
             )
         # Bound memory for clients which repeatedly vary their identity.
-        if len(self.hits) > 10000:
+        if key not in self.hits and len(self.hits) >= 10000:
             self.hits = {k: v for k, v in self.hits.items() if v and v[-1] > now - 900}
+            if len(self.hits) >= 10000:
+                self.hits.pop(next(iter(self.hits)))
         queue = self.hits.setdefault(key, deque())
         while queue and queue[0] <= now - window:
             queue.popleft()

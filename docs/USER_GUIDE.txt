@@ -953,30 +953,21 @@ Plain/odd terminal output
 This is an alternative to the SQLite/uvicorn server, not a second server to run
 on the same port. Docker Desktop must be running. The repository has compose.yaml.
 
-From the repository root, set secrets in the current shell. These macOS/Linux
-examples generate values without printing them:
+From the repository root, generate credentials once (python3 on macOS/Linux):
 
-  export POSTGRES_PASSWORD="$(uv run python -c 'import secrets; print(secrets.token_hex(24))')"
-  export SECRET_KEY="$(uv run python -c 'import secrets; print(secrets.token_hex(32))')"
-  docker compose up --build
+  python scripts/setup_container.py
+  docker compose --env-file .env.docker up -d --build --wait --wait-timeout 180
 
-PowerShell equivalents:
+See docs/CONTAINERS.md for setup without host Python and Kubernetes instructions.
+The setup script preserves existing .env.docker credentials. Keep this file
+private and backed up; changing its password does not change the password already
+stored in PostgreSQL's persistent volume.
 
-  $env:POSTGRES_PASSWORD = uv run python -c "import secrets; print(secrets.token_hex(24))"
-  $env:SECRET_KEY = uv run python -c "import secrets; print(secrets.token_hex(32))"
-  docker compose up --build
-
-Securely retain the values for subsequent starts. Do not generate a new database
-password every time against an existing Postgres volume: setting an environment
-variable does not change the stored Postgres password. Keep the signing key
-stable too, unless you intend to invalidate existing JWTs.
-
-The Compose stack starts db, applies migrations using migrate, then starts api.
+The Compose stack starts db, then api runs migrations before serving requests.
 The API binds to localhost:8000; Postgres is not exposed on a host port.
 
-  docker compose ps
-  docker compose logs --tail=100 api
-  docker compose logs --tail=100 migrate
+  docker compose --env-file .env.docker ps
+  docker compose --env-file .env.docker logs --tail=100 api
 
 Then in another terminal:
 
@@ -991,11 +982,11 @@ file do not appear automatically in Postgres.
 
 Stop without deleting persistent database storage:
 
-  docker compose down
+  docker compose --env-file .env.docker down
 
 Do not add --volumes/-v unless you deliberately intend to remove stored data.
-The development mailbox and per-process rate limiter still need production
-adapters before running an unrestricted public service.
+Email delivery is disabled until a real mail adapter is configured. Keep one API
+worker/replica until a shared rate limiter is implemented.
 
 
 20. BACKEND API AND ACCOUNT FEATURES

@@ -1,9 +1,12 @@
 FROM python:3.13-slim AS builder
 WORKDIR /build
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY cli/ cli/
 COPY backend/ backend/
-RUN pip wheel --no-cache-dir --wheel-dir /wheels .
+RUN pip install --no-cache-dir uv==0.9.21 \
+    && uv export --locked --no-dev --no-emit-project --output-file requirements.txt > /dev/null \
+    && pip wheel --no-cache-dir --require-hashes -r requirements.txt --wheel-dir /wheels \
+    && pip wheel --no-cache-dir --no-deps --wheel-dir /wheels .
 
 FROM python:3.13-slim
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 DATABASE_URL=sqlite+aiosqlite:////data/flunky.db
@@ -14,7 +17,7 @@ COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir --no-index --find-links=/wheels flunky && rm -rf /wheels
 COPY alembic.ini ./
 COPY migrations/ migrations/
-USER flunky
+USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)"]
-CMD ["gunicorn", "backend.main:app", "--worker-class", "uvicorn_worker.UvicornWorker", "--workers", "2", "--bind", "0.0.0.0:8000"]
+CMD ["python", "-m", "backend.container"]

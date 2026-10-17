@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     environment: Literal["dev", "test", "production"] = "dev"
     secret_key: str = "dev-secret-change-me"
     database_url: str = "sqlite+aiosqlite:///./flunky.db"
+    database_password: SecretStr | None = None
     sql_echo: bool = False
     access_token_expire_minutes: int = 15
     sentry_dsn: str | None = None
@@ -30,6 +31,8 @@ class Settings(BaseSettings):
             self.database_url = "postgresql+asyncpg://" + self.database_url.split("://", 1)[1]
         if self.database_url.startswith("postgresql+asyncpg://"):
             url = make_url(self.database_url)
+            if self.database_password is not None:
+                url = url.set(password=self.database_password.get_secret_value())
             query = dict(url.query)
             if "sslmode" in query:
                 query["ssl"] = query.pop("sslmode")

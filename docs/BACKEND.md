@@ -11,7 +11,7 @@ Canonical API: `/v1/register`, `/v1/login`, `/v1/tasks`. Original routes are com
 
 Set `ENVIRONMENT=production` and a random `SECRET_KEY` of at least 32 characters. Optional `SENTRY_DSN` enables error reporting with default PII collection disabled. JSON request logs exclude request bodies and query strings.
 
-Docker Compose uses PostgreSQL 16, a one-shot migration service, and a non-root API. Set SECRET_KEY and POSTGRES_PASSWORD in your shell or local .env, then run `docker compose up --build`. Do not commit credentials. If a password contains URL-reserved characters, supply an encoded DATABASE_URL in your deployment configuration. The database is not exposed on a host port.
+Docker Compose uses PostgreSQL 16 and a non-root API that runs migrations before serving. Generate credentials with `python scripts/setup_container.py`, then run `docker compose --env-file .env.docker up -d --build --wait`. `DATABASE_PASSWORD` supplies a raw PostgreSQL password separately from `DATABASE_URL`, including URL-reserved characters. PostgreSQL is not exposed on a host port. See [container installation](CONTAINERS.md) for Docker, Kubernetes, upgrades, and limitations.
 
 Implementation references: [SQLAlchemy async sessions](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html), [Alembic async migration recipe](https://alembic.sqlalchemy.org/en/latest/cookbook.html#using-asyncio-with-alembic).
 
