@@ -48,7 +48,7 @@ test = [
     "pytest-asyncio>=1",
     "pytest-xdist>=3",
     "respx>=0.22",
-    "syrupy>=5,<6",
+    "syrupy>=5,<7",
     "hypothesis>=6",
 ]
 dev = [
