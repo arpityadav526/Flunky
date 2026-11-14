@@ -64,7 +64,7 @@ docs = [
     "mkdocs-material>=9,<10",
 ]
 release = [
-    "cyclonedx-bom>=7,<8",
+    "cyclonedx-bom>=7,<9",
     "pyinstaller>=6,<7",
 ]
 
